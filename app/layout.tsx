@@ -2,6 +2,7 @@ import { Footer, Layout, Navbar } from 'nextra-theme-docs'
 import { Banner, Head } from 'nextra/components'
 import { getPageMap } from 'nextra/page-map'
 import 'nextra-theme-docs/style.css'
+import './global.css'
 
 export const metadata = {
   title: {
@@ -26,7 +27,7 @@ const navbar = (
   <Navbar
     logo={
       <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>
-        provenonce<span style={{ color: '#10b981' }}>.dev</span>
+        provenonce<span style={{ color: '#f97316' }}>.dev</span>
       </span>
     }
     projectLink="https://github.com/jarekpiot/provenonce"
@@ -52,7 +53,7 @@ export default async function RootLayout({
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <Head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <meta name="theme-color" content="#020617" />
+        <meta name="theme-color" content="#ffffff" />
       </Head>
       <body>
         <Layout

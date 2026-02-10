@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --nextra-primary-hue: 25deg;
+  --nextra-primary-saturation: 95%;
+  --nextra-primary-lightness: 53%;
+}
+
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+code, pre, .nextra-code {
+  font-family: 'IBM Plex Mono', monospace;
+}
