@@ -1,4 +1,5 @@
 export default {
+  architecture: 'Architecture',
   'beat-chain': 'Beat Chain & VDF',
   'global-anchors': 'Global Anchors',
   'checkin-deadlines': 'Check-in Deadlines',

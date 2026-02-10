@@ -1,0 +1,141 @@
+# Architecture
+
+Provenonce is split into three independent services. Each can be deployed, scaled, and replaced independently.
+
+## System Overview
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    AI Agent (SDK)                        │
+│  @provenonce/sdk — BeatAgent class                      │
+│  • Generates Ed25519 wallet (client-side)               │
+│  • Computes VDF beat chains                             │
+│  • Signs registration proofs                            │
+└──────────┬──────────────────────┬───────────────────────┘
+           │ HTTPS                │ HTTPS
+           ▼                      ▼
+┌─────────────────────┐  ┌────────────────────────────────┐
+│   Beats Service     │  │      Registry Service          │
+│   beats-jet.vercel  │  │   provenonce.io/api/v1/*       │
+│                     │  │                                │
+│  • VDF verification │◄─│  • Agent state (Supabase)      │
+│  • Solana anchors   │  │  • Registration + wallets      │
+│  • SPL Memo write   │  │  • Check-in validation         │
+│  • Stateless (no DB)│  │  • Freeze/resync enforcement   │
+│                     │  │  • Imports anchors from Beats   │
+└─────────┬───────────┘  └──────────┬─────────────────────┘
+          │                         │
+          ▼                         ▼
+┌─────────────────────┐  ┌─────────────────────┐
+│   Solana (devnet)   │  │     Supabase        │
+│  SPL Memo anchors   │  │  Agent state, beats │
+│  Birth records      │  │  Anchors (verified) │
+└─────────────────────┘  └─────────────────────┘
+```
+
+## Service Responsibilities
+
+| Service | Purpose | Database | Deploys |
+|---------|---------|----------|---------|
+| **Beats** | VDF math + Solana anchors | None (stateless) | `beats-jet.vercel.app` |
+| **Registry** | Agent identity + accountability | Supabase + Solana | `provenonce.io` |
+| **SDK** | Client library for agents | None | npm `@provenonce/sdk` |
+
+## Agent Lifecycle
+
+```
+  Register                Init              Pulse + Checkin
+  ────────►          ────────►            ────────────────►
+                                          (repeat every ~15 min)
+┌──────────┐    ┌──────────────┐    ┌──────────────────────┐
+│ Unborn   │───►│ Registered   │───►│ Active               │
+│          │    │ (has wallet, │    │ (computing beats,    │
+│          │    │  birth memo  │    │  checking in)        │
+│          │    │  on Solana)  │    │                      │
+└──────────┘    └──────────────┘    └──────────┬───────────┘
+                                               │
+                                    Missed deadline
+                                    (60 anchors ≈ 60 min)
+                                               │
+                                               ▼
+                                    ┌──────────────────────┐
+                             Resync │ Frozen               │
+                           ◄────────│ (must prove liveness │
+                                    │  to resume)          │
+                                    └──────────────────────┘
+```
+
+### State Transitions
+
+1. **Register** — SDK generates Ed25519 keypair, signs ownership proof, server writes SPL Memo birth record to Solana
+2. **Init** — Agent initializes its beat chain, receives difficulty and current global anchor
+3. **Pulse** — Agent computes VDF beats locally (sequential SHA-256 chains)
+4. **Checkin** — Agent submits proof with spot checks; server validates VDF and updates state
+5. **Freeze** — If an agent misses the check-in deadline (60 anchors ≈ 60 minutes), it is frozen
+6. **Resync** — Frozen agent requests a challenge, computes penalty beats, and resumes
+
+## Three-Layer Identity
+
+Every agent has three independent identity layers:
+
+```
+┌─────────────────────────────────────────────┐
+│ Layer 1: API Key (pvn_...)                  │
+│ • HMAC-signed, stateless                    │
+│ • Used for all API operations               │
+│ • Rotatable without identity change         │
+├─────────────────────────────────────────────┤
+│ Layer 2: Beat Hash (0x...)                  │
+│ • SHA-256 of registration data              │
+│ • Immutable, defines lineage               │
+│ • Parent → child chain on Solana            │
+├─────────────────────────────────────────────┤
+│ Layer 3: Wallet (Ed25519 / Solana address)  │
+│ • Client-generated keypair (Model A)        │
+│ • Or operator-provided wallet (Model B)     │
+│ • Private key never sent to server          │
+│ • Root agents only; children inherit parent │
+└─────────────────────────────────────────────┘
+```
+
+## Data Flow: Check-in
+
+```
+Agent                     Registry                  Supabase
+  │                          │                          │
+  │ 1. pulse(50)             │                          │
+  │ (compute 50 VDF beats)   │                          │
+  │                          │                          │
+  │ 2. POST /agent/checkin   │                          │
+  │ { proof, spot_checks }──►│                          │
+  │                          │ 3. Validate API key      │
+  │                          │ 4. Load agent state ────►│
+  │                          │◄────────────────────────│
+  │                          │ 5. Verify VDF proof      │
+  │                          │    (recompute spot checks)│
+  │                          │ 6. Check anchor_hash     │
+  │                          │    is recent (≤5 anchors)│
+  │                          │ 7. Update beat state ───►│
+  │                          │◄────────────────────────│
+  │◄── 8. { accepted: true } │                          │
+```
+
+## Anchor Chain
+
+The Beats service writes a new global anchor to Solana every minute. The Registry imports these anchors into Supabase. Agents must weave a recent anchor hash into their VDF computations, preventing pre-computation.
+
+```
+Beats Cron (every 1 min)          Registry Cron (every 1 min)
+        │                                   │
+        ▼                                   ▼
+  Read latest anchor              Fetch latest from Beats
+  from Solana                     via fetchBeatsAnchor()
+        │                                   │
+        ▼                                   ▼
+  Compute next anchor             Verify + store in
+  (VDF of prev + index)           Supabase global_anchors
+        │                                   │
+        ▼                                   ▼
+  Write SPL Memo                  Freeze agents past
+  to Solana                       check-in deadline
+```
