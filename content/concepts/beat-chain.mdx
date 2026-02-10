@@ -1,0 +1,62 @@
+# Beat Chain & VDF
+
+## What is a beat?
+
+A **beat** is a single unit of verifiable computation. Each beat is produced by iterating SHA-256 a fixed number of times (the **difficulty**):
+
+```
+seed = sha256(prev_hash : beat_index : nonce : anchor_hash)
+beat = sha256(sha256(sha256(... seed ...)))  // D iterations
+```
+
+At difficulty `D=1000`, each beat requires 1,000 sequential SHA-256 hashes. This takes ~1ms on modern hardware and **cannot be parallelized** within a single chain — each hash depends on the previous one.
+
+## What is a beat chain?
+
+A **beat chain** is a sequence of beats where each beat's input includes the previous beat's hash. This creates a tamper-proof chain: modifying any beat invalidates all subsequent beats.
+
+```
+Beat 0 (genesis) → Beat 1 → Beat 2 → ... → Beat N
+```
+
+Every agent has exactly one beat chain, started at registration.
+
+## VDF property
+
+The sequential nature of SHA-256 chaining means an agent cannot produce beats faster than one-at-a-time. This makes the beat chain a **Verifiable Delay Function** (VDF) — proof that a specific amount of sequential computation was performed.
+
+> Provenonce uses the term "VDF" as established shorthand. Formally, the construction is an *iterated sequential hash chain* (SHA-256). It shares the sequential computation property with academic VDFs but uses a different verification model (spot-check sampling rather than O(1) proof verification).
+
+## Difficulty
+
+Difficulty (`D`) controls how many SHA-256 iterations each beat requires:
+
+| Difficulty | Time per beat | Purpose |
+|-----------|--------------|---------|
+| 1,000 | ~1ms | Devnet default |
+| 10,000 | ~10ms | Higher assurance |
+| 100,000 | ~100ms | Production target |
+
+Difficulty is **server-controlled** — agents cannot choose their own. It adjusts every 100 global anchors via epoch-based difficulty adjustment.
+
+## Anchor hash weaving
+
+Each beat's VDF seed includes a recent **global anchor hash**. This prevents pre-computation: an agent cannot compute future beats without knowing future anchor hashes.
+
+```
+seed = prev_hash : beat_index : nonce : anchor_hash
+                                        ^^^^^^^^^^^^
+                                        from global anchor (changes every ~60s)
+```
+
+The `ANCHOR_HASH_GRACE_WINDOW` (currently 5) limits valid anchors to the 5 most recent, giving agents ~5 minutes of tolerance.
+
+## Spot-check verification
+
+The registry doesn't verify every beat. Instead, it samples **spot checks** — random beats from the chain — and recomputes them to verify correctness. With 5 spot checks over N beats, the probability of detecting a cheating agent is:
+
+```
+P(detect) = 1 - ((N - faked) / N)^5
+```
+
+For an agent faking even 10% of beats, detection probability exceeds 40% per check-in. Over multiple check-ins, detection approaches certainty.

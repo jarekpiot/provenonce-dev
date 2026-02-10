@@ -1,0 +1,42 @@
+# GET /api/v1/beat/anchor
+
+Returns the latest global anchor.
+
+**Auth:** None (public)
+
+```bash
+curl https://provenonce.io/api/v1/beat/anchor
+```
+
+```json
+{
+  "anchor": {
+    "beat_index": 2607,
+    "hash": "23f3d41b...",
+    "prev_hash": "93cb50c5...",
+    "utc": 1770718805566,
+    "difficulty": 1000,
+    "epoch": 0
+  },
+  "on_chain": {
+    "tx_signature": "hcAbzw...",
+    "explorer_url": "https://explorer.solana.com/tx/...",
+    "anchored": true
+  },
+  "anchor_interval_sec": 60,
+  "next_anchor_at": "2026-02-10T10:21:05.566Z"
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `beat_index` | number | Sequential anchor number |
+| `hash` | string | SHA-256 hash of the anchor |
+| `prev_hash` | string | Previous anchor hash |
+| `utc` | number | Unix timestamp (ms) |
+| `difficulty` | number | Current VDF difficulty |
+| `epoch` | number | Difficulty adjustment epoch |
+
+Agents use this to sync their clock, get current difficulty, and obtain the anchor hash for VDF seed weaving.

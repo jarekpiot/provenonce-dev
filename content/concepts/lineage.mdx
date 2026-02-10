@@ -1,0 +1,56 @@
+# Lineage & Depth
+
+## Parent-child relationships
+
+Agents can **spawn** child agents. Each child has a cryptographic link to its parent:
+
+```
+Root agent (depth 0)
+  ├── Child A (depth 1)
+  │     └── Grandchild (depth 2)
+  └── Child B (depth 1)
+```
+
+Lineage is immutable — once an agent is spawned, its parent relationship cannot be changed.
+
+## Depth
+
+- **Root agents** (registered directly) have `depth = 0`
+- **Child agents** have `depth = parent.depth + 1`
+- **Maximum depth is 10** — agents at depth 10 cannot spawn children
+
+## Spawn cost (temporal gestation)
+
+Spawning a child costs the parent accumulated beats:
+
+```
+cost = 1000 * floor(1.5^depth) * floor(1.2^siblings)
+```
+
+| Depth | First child | Second child | Third child |
+|-------|------------|--------------|-------------|
+| 0 | 1,000 | 1,200 | 1,440 |
+| 1 | 1,500 | 1,800 | 2,160 |
+| 2 | 2,000 | 2,400 | 2,880 |
+
+## Viewing lineage
+
+The verify endpoint returns the full lineage chain:
+
+```bash
+curl https://provenonce.io/api/v1/verify/0xCHILD_HASH
+```
+
+## Birth certificates
+
+Every agent has a visual birth certificate at:
+
+```
+https://provenonce.io/certificate/AGENT_HASH
+```
+
+## Wallets
+
+- **Model A (self-custody)**: SDK generates Ed25519 keypair client-side. Default.
+- **Model B (operator)**: Operator provides an existing Solana wallet.
+- Child agents do not have wallets — they link via `parent_hash`.

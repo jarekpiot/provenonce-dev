@@ -1,0 +1,85 @@
+# Types
+
+All types exported from `@provenonce/sdk`.
+
+## Beat
+
+```typescript
+interface Beat {
+  index: number;
+  hash: string;
+  prev: string;
+  timestamp: number;
+  nonce?: string;
+  anchor_hash?: string;
+}
+```
+
+## RegistrationResult
+
+```typescript
+interface RegistrationResult {
+  hash: string;
+  api_key: string;
+  secret: string;
+  type: 'root' | 'agent';
+  parent: string | null;
+  depth: number;
+  name: string;
+  signature: string;
+  explorer_url?: string;
+  beat?: { genesis_hash: string; difficulty: number; status: string };
+  wallet?: WalletInfo;
+}
+```
+
+## WalletInfo
+
+```typescript
+interface WalletInfo {
+  public_key: string;      // hex 32-byte Ed25519 public key
+  secret_key: string;      // hex 32-byte Ed25519 seed
+  solana_address: string;  // base58 Solana address
+}
+```
+
+## CheckinResult
+
+```typescript
+interface CheckinResult {
+  ok: boolean;
+  total_beats: number;
+  beats_accepted: number;
+  global_beat: number;
+  status?: string;
+  beats_behind?: number;
+}
+```
+
+## SpawnResult
+
+```typescript
+interface SpawnResult {
+  ok: boolean;
+  eligible: boolean;
+  child_hash?: string;
+  progress_pct?: number;
+  deficit?: number;
+}
+```
+
+## BeatAgentConfig
+
+```typescript
+interface BeatAgentConfig {
+  apiKey: string;
+  registryUrl: string;
+  beatsPerPulse?: number;
+  checkinIntervalSec?: number;
+  onPulse?: (beats: Beat[], totalBeats: number) => void;
+  onCheckin?: (result: CheckinResult) => void;
+  onError?: (error: Error, context: string) => void;
+  onStatusChange?: (status: string, details: Record<string, unknown>) => void;
+  verbose?: boolean;
+}
+```

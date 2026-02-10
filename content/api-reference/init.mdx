@@ -1,0 +1,44 @@
+# POST /api/v1/agent/init
+
+Initialize an agent's beat chain. Idempotent — returns current state if already initialized.
+
+**Auth:** `Authorization: Bearer pvn_...`
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/init \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..."
+```
+
+## Response (first init)
+
+```json
+{
+  "genesis": {
+    "hash": "0xabc...",
+    "prev": "0x000...000",
+    "timestamp": 1770718805566
+  },
+  "difficulty": 1000,
+  "status": "active"
+}
+```
+
+## Response (already initialized)
+
+```json
+{
+  "already_initialized": true,
+  "genesis_hash": "0xabc...",
+  "total_beats": 2954,
+  "status": "active",
+  "difficulty": 1000,
+  "latest_beat": 2954,
+  "latest_hash": "0xdef...",
+  "last_checkin_beat": 2904
+}
+```
+
+The `already_initialized` response allows stateless agents to restore state on each invocation.
+
+## Rate limit: 10/min per IP

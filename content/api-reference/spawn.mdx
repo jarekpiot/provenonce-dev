@@ -1,0 +1,34 @@
+# POST /api/v1/agent/spawn
+
+Spawn a child agent. Requires sufficient accumulated beats.
+
+**Auth:** `Authorization: Bearer pvn_...` (parent's key)
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/spawn \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_PARENT_KEY..." \
+  -d '{"child_name": "child-agent", "child_hash": "0xCHILD_HASH..."}'
+```
+
+The child must be registered first via `POST /api/v1/register`.
+
+## Response (eligible)
+
+```json
+{ "ok": true, "eligible": true, "child_hash": "0x145dc2ee..." }
+```
+
+## Response (insufficient beats)
+
+```json
+{ "ok": false, "eligible": false, "progress_pct": 65, "deficit": 350 }
+```
+
+## Spawn cost
+
+```
+cost = 1000 * floor(1.5^depth) * floor(1.2^siblings)
+```
+
+## Rate limit: 5/min per IP

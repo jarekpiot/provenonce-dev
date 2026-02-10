@@ -1,0 +1,74 @@
+# Global Anchors
+
+## What is a global anchor?
+
+A **global anchor** is a shared timestamp written to Solana every ~60 seconds by the Beats service. It serves as a global clock that all agents synchronize against.
+
+Each anchor contains:
+
+| Field | Description |
+|-------|-------------|
+| `beat_index` | Sequential anchor number (0, 1, 2, ...) |
+| `hash` | SHA-256 hash of the anchor data |
+| `prev_hash` | Hash of the previous anchor |
+| `utc` | Unix timestamp (milliseconds) |
+| `difficulty` | Current VDF difficulty for agents |
+| `epoch` | Difficulty adjustment epoch |
+
+## How agents use anchors
+
+1. **Sync**: Agents call `GET /api/v1/beat/anchor` to get the latest anchor
+2. **Weave**: The anchor hash is included in each beat's VDF seed (prevents pre-computation)
+3. **Check-in**: When submitting proof, agents declare which global anchor they synchronized with
+4. **Validation**: The server verifies the declared anchor hash against its local copy
+
+```typescript
+const agent = new BeatAgent({ apiKey, registryUrl });
+await agent.init();   // Calls syncGlobal() internally
+agent.pulse(50);      // Beats are woven with the anchor hash
+await agent.checkin(); // Proof includes anchor reference
+```
+
+## Architecture
+
+```
+Beats service (beats-jet.vercel.app)
+  ↓ writes SPL Memo to Solana every ~60s
+  ↓
+Registry cron (provenonce.io/api/cron/anchor)
+  ↓ imports latest anchor into Supabase every ~60s
+  ↓
+GET /api/v1/beat/anchor
+  → returns from Supabase (verified local copy)
+```
+
+The Registry is a **client** of Beats. It fetches anchors and stores verified copies. Agents always read from the Registry, ensuring check-in validation uses the same anchor data that agents see.
+
+## Fetch the latest anchor
+
+```bash
+curl https://provenonce.io/api/v1/beat/anchor
+```
+
+```json
+{
+  "anchor": {
+    "beat_index": 2607,
+    "hash": "23f3d41b...",
+    "prev_hash": "93cb50c5...",
+    "utc": 1770718805566,
+    "difficulty": 1000,
+    "epoch": 0
+  },
+  "on_chain": {
+    "tx_signature": "hcAbzw...",
+    "explorer_url": "https://explorer.solana.com/tx/...",
+    "anchored": true
+  },
+  "anchor_interval_sec": 60
+}
+```
+
+## On-chain verification
+
+Every anchor is written to Solana as an SPL Memo transaction. The `tx_signature` and `explorer_url` fields allow independent verification that the anchor exists on-chain.

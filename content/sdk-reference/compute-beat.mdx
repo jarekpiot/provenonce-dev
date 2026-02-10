@@ -1,0 +1,36 @@
+# computeBeat() / computeBeatsLite()
+
+Low-level VDF computation functions.
+
+```typescript
+import { computeBeat, computeBeatsLite } from '@provenonce/sdk';
+```
+
+## computeBeat()
+
+Compute a single VDF beat.
+
+```typescript
+const beat = computeBeat('0xprev...', 1, 1000, undefined, '0xanchor...');
+// beat.hash, beat.index, beat.prev, beat.timestamp
+```
+
+## computeBeatsLite()
+
+Compute N sequential beats, returning only the last one.
+
+```typescript
+const { lastBeat, elapsed } = computeBeatsLite('0xstart...', 0, 100, 1000, '0xanchor...');
+console.log(`100 beats in ${elapsed}ms`);
+```
+
+## generateWalletKeypair()
+
+Generate an Ed25519 keypair for agent wallet identity.
+
+```typescript
+import { generateWalletKeypair } from '@provenonce/sdk';
+
+const { publicKey, secretKey } = generateWalletKeypair();
+// Both hex-encoded 32-byte values
+```

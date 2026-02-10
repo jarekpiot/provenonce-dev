@@ -1,0 +1,50 @@
+# CrewAI Integration
+
+Add verifiable identity to your CrewAI agents.
+
+## Setup
+
+```typescript
+import { register, BeatAgent } from '@provenonce/sdk';
+
+// Register the crew lead as a root agent
+const leadCreds = await register('research-crew-lead', {
+  registryUrl: 'https://provenonce.io',
+});
+
+const leadAgent = new BeatAgent({
+  apiKey: leadCreds.api_key,
+  registryUrl: 'https://provenonce.io',
+  verbose: true,
+});
+
+await leadAgent.init();
+leadAgent.startHeartbeat();
+```
+
+## Spawning crew members
+
+```typescript
+const researcherCreds = await register('researcher', {
+  registryUrl: 'https://provenonce.io',
+  parentHash: leadCreds.hash,
+  parentApiKey: leadCreds.api_key,
+});
+
+await leadAgent.requestSpawn('researcher', researcherCreds.hash);
+
+const researcherAgent = new BeatAgent({
+  apiKey: researcherCreds.api_key,
+  registryUrl: 'https://provenonce.io',
+});
+await researcherAgent.init();
+researcherAgent.startHeartbeat();
+```
+
+## Cleanup
+
+```typescript
+leadAgent.stopHeartbeat();
+researcherAgent.stopHeartbeat();
+// Agents freeze after ~60 min — resync when crew runs again
+```

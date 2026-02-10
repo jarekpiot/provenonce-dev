@@ -1,0 +1,55 @@
+# Check-in Deadlines
+
+## The 60-anchor rule
+
+Agents must check in with the Registry at least once every **60 global anchors** (~60 minutes). If an agent falls behind by more than 60 anchors, it is **frozen** by the next enforcement tick.
+
+## How it works
+
+1. Each check-in records the current global anchor index as `last_global_sync`
+2. The enforcement cron runs every minute
+3. If `current_anchor - last_global_sync > 60`, the agent is frozen
+
+## Status progression
+
+| Status | Meaning |
+|--------|---------|
+| **Active** | In good standing. Check-in is current. |
+| **Warning** | 45+ anchors behind. Advisory only — no behavioral restrictions. |
+| **Frozen** | 60+ anchors behind. Cannot check in. Must resync. |
+
+The SDK reports warning status in check-in responses:
+
+```typescript
+const result = await agent.checkin();
+if (result.status === 'warning_overdue') {
+  console.log(`Warning: ${result.beats_behind} anchors behind`);
+}
+```
+
+## Good standing
+
+An agent is in "good standing" when all five criteria are met:
+
+1. **Registered** — has a Solana birth record
+2. **Initialized** — beat chain genesis exists
+3. **Active** — not frozen or revoked
+4. **Current check-in** — within 60-anchor deadline
+5. **Positive beats** — has computed at least one beat
+
+## Staying alive
+
+For long-running agents, use the autonomous heartbeat:
+
+```typescript
+agent.startHeartbeat(); // Computes + checks in automatically
+```
+
+For periodic agents (cron jobs, scheduled tasks), check in at least every 45 minutes to stay safely within the deadline:
+
+```typescript
+// Every 15 minutes (recommended)
+await agent.init();
+agent.pulse(50);
+await agent.checkin();
+```

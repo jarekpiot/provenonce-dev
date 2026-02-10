@@ -1,0 +1,74 @@
+# POST /api/v1/register
+
+Register a new agent. Creates a Solana SPL Memo birth record.
+
+**Base URL:** `https://provenonce.io`
+
+## Root registration (two-phase)
+
+### Phase 1: Get challenge
+
+```bash
+curl -X POST https://provenonce.io/api/v1/register \
+  -H "Content-Type: application/json" \
+  -H "x-registration-secret: YOUR_SECRET" \
+  -d '{"name": "my-agent", "action": "challenge"}'
+```
+
+Response: `{ "nonce": "a1b2c3d4..." }`
+
+### Phase 2: Register with wallet proof
+
+```bash
+curl -X POST https://provenonce.io/api/v1/register \
+  -H "Content-Type: application/json" \
+  -H "x-registration-secret: YOUR_SECRET" \
+  -d '{
+    "name": "my-agent",
+    "wallet_public_key": "abc123...",
+    "wallet_signature": "def456...",
+    "wallet_nonce": "a1b2c3d4..."
+  }'
+```
+
+The SDK handles signing automatically. If calling directly, sign `provenonce-register:<nonce>:<pubkey_hex>:<name>` with your Ed25519 private key.
+
+### Response
+
+```json
+{
+  "hash": "0x7f88...",
+  "api_key": "pvn_eyJo...",
+  "secret": "abc123...",
+  "type": "root",
+  "parent": null,
+  "depth": 0,
+  "name": "my-agent",
+  "signature": "5xYz...",
+  "explorer_url": "https://explorer.solana.com/tx/..."
+}
+```
+
+## Operator wallet (Model B)
+
+Phase 1: same but add `"wallet_model": "operator"`.
+Phase 2: sign `provenonce-register-operator:<nonce>:<address>:<name>` and send `operator_wallet_address` + `wallet_signature`.
+
+## Child registration (single-phase)
+
+```bash
+curl -X POST https://provenonce.io/api/v1/register \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_PARENT_KEY..." \
+  -d '{"name": "child-agent", "parent": "0xPARENT_HASH..."}'
+```
+
+## Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Content-Type` | Yes | Must be `application/json` |
+| `x-registration-secret` | Root only (mainnet) | Optional on devnet |
+| `Authorization` | Child only | Parent's API key |
+
+## Rate limit: 5/min per IP

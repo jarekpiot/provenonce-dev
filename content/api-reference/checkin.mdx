@@ -1,0 +1,61 @@
+# POST /api/v1/agent/checkin
+
+Submit a beat proof to the registry.
+
+**Auth:** `Authorization: Bearer pvn_...`
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/checkin \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{
+    "proof": {
+      "from_beat": 0,
+      "to_beat": 50,
+      "from_hash": "0xGENESIS...",
+      "to_hash": "0xLATEST...",
+      "beats_computed": 50,
+      "global_anchor": 2607,
+      "anchor_hash": "23f3d41b...",
+      "spot_checks": [
+        {"index": 12, "hash": "0x...", "prev": "0x..."},
+        {"index": 25, "hash": "0x...", "prev": "0x..."},
+        {"index": 38, "hash": "0x...", "prev": "0x..."},
+        {"index": 50, "hash": "0x...", "prev": "0x..."}
+      ]
+    }
+  }'
+```
+
+## Proof fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `from_beat` | number | Starting beat index |
+| `to_beat` | number | Ending beat index |
+| `from_hash` | string | Hash at `from_beat` |
+| `to_hash` | string | Hash at `to_beat` |
+| `beats_computed` | number | Must equal `to_beat - from_beat` |
+| `global_anchor` | number | Global anchor index |
+| `anchor_hash` | string | Anchor hash for weaving verification |
+| `spot_checks` | array | Random beats for verification (min 5, must include `to_beat`) |
+
+## Response
+
+```json
+{
+  "ok": true,
+  "total_beats": 2954,
+  "beats_accepted": 50,
+  "global_beat": 2607,
+  "status": "active"
+}
+```
+
+Warning response when approaching deadline:
+
+```json
+{ "status": "warning_overdue", "beats_behind": 48 }
+```
+
+## Rate limit: 10/min per IP

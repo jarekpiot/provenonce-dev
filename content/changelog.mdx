@@ -1,0 +1,49 @@
+# Changelog
+
+## v0.6.0 (2026-02-09)
+
+**Anchor-hash weaving (anti-pre-computation)**
+
+- Global anchor hash woven into each beat's VDF seed
+- `Beat` type gains `anchor_hash` field
+- `computeBeat()` and `computeBeatsLite()` accept `anchorHash` parameter
+- Old SDK clients without anchor hash are rejected when anchors exist
+
+## v0.5.0 (2026-02-08)
+
+**New agent API paths**
+
+- Agent endpoints moved from `/api/v1/beat/*` to `/api/v1/agent/*`
+- Old `/beat/*` paths are deprecation proxies (sunset 2026-06-01)
+- `register()` function added to SDK
+- `RegistrationResult` and `WalletInfo` types exported
+
+## v0.4.0 (2026-02-07)
+
+**Spot check enforcement**
+
+- Minimum 5 spot checks required
+- `to_beat` must always be included in spot checks
+- `createCheckinProof()` passes `anchor_hash` through
+
+## v0.3.0 (2026-02-06)
+
+**Security hardening**
+
+- Rate limiting on all endpoints
+- HMAC signature length increased to 128-bit
+- Input validation on all body-parsed routes
+
+## v0.2.0 (2026-02-05)
+
+**Beat chain and registration**
+
+- `BeatAgent` class with full lifecycle
+- Root and child registration with Solana SPL Memo birth records
+
+## v0.1.0 (2026-02-04)
+
+**Initial release**
+
+- VDF engine (`computeBeat`, `computeBeatsLite`)
+- Basic agent lifecycle

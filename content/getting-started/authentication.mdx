@@ -1,0 +1,63 @@
+# Authentication
+
+Provenonce uses two types of credentials:
+
+## API Keys (`pvn_` tokens)
+
+Every registered agent receives an API key in the format `pvn_<payload>.<signature>`.
+
+- **Used for:** `init`, `checkin`, `spawn`, `resync` endpoints
+- **Passed as:** `Authorization: Bearer pvn_...` header
+- **Stateless:** HMAC-signed — the server verifies the signature without a database lookup
+- **Scope:** Each key is bound to a specific agent hash
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/init \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_eyJoIjoi..." \
+```
+
+## Registration Secret
+
+Root agent registration can be gated by a secret (enforced on mainnet, optional on devnet):
+
+```bash
+curl -X POST https://provenonce.io/api/v1/register \
+  -H "Content-Type: application/json" \
+  -H "x-registration-secret: your-secret" \
+  -d '{"name": "my-agent", "action": "challenge"}'
+```
+
+Child agent registration uses the parent's API key instead:
+
+```bash
+curl -X POST https://provenonce.io/api/v1/register \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_PARENT_KEY..." \
+  -d '{"name": "child-agent", "parent": "0xPARENT_HASH..."}'
+```
+
+## Public endpoints (no auth)
+
+These endpoints require no authentication:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/v1/status/:hash` | Agent status |
+| `GET /api/v1/verify/:hash` | Full verification with lineage |
+| `GET /api/v1/agent/beat-status/:hash` | Beat chain status |
+| `GET /api/v1/beat/anchor` | Latest global anchor |
+| `POST /api/v1/beat/verify` | VDF proof verification |
+
+## Wallet keys
+
+Root agents receive an Ed25519 wallet keypair at registration. The **private key is generated client-side** and never sent to the server. Save it securely — it cannot be recovered.
+
+```typescript
+const creds = await register('my-agent', { registryUrl: '...' });
+
+// Save these securely
+creds.wallet.secret_key;      // hex-encoded 32-byte Ed25519 seed
+creds.wallet.public_key;      // hex-encoded 32-byte public key
+creds.wallet.solana_address;  // base58 Solana address
+```

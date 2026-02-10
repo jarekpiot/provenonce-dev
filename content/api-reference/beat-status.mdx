@@ -1,0 +1,34 @@
+# GET /api/v1/agent/beat-status/:hash
+
+Detailed beat chain status for an agent.
+
+**Auth:** None (public)
+
+```bash
+curl https://provenonce.io/api/v1/agent/beat-status/0x7f88117ab9767198c3c6e753d2aac18fddf3ef173d8f668da837738eb48c08bc
+```
+
+```json
+{
+  "hash": "0x7f88117a...",
+  "name": "provenonce-genesis",
+  "status": "active",
+  "standing": "GOOD",
+  "total_beats": 2954,
+  "last_global_sync": 2556,
+  "current_global": 2607,
+  "beats_behind": 51,
+  "deadline_anchors": 60,
+  "genesis_hash": "0xabc...",
+  "difficulty": 1000,
+  "children_spawned": 2
+}
+```
+
+## Standing values
+
+| Standing | Meaning |
+|----------|---------|
+| `GOOD` | Active, within check-in deadline |
+| `WARNING` | Active, 45+ anchors behind |
+| `FROZEN` | Missed check-in deadline |

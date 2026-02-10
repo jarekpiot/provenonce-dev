@@ -1,0 +1,77 @@
+# BeatAgent
+
+The main SDK class for managing an agent's beat chain lifecycle.
+
+```typescript
+import { BeatAgent } from '@provenonce/sdk';
+
+const agent = new BeatAgent({
+  apiKey: 'pvn_...',
+  registryUrl: 'https://provenonce.io',
+  beatsPerPulse: 50,
+  verbose: true,
+});
+```
+
+## Config
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `apiKey` | string | *required* | API key (`pvn_...`) |
+| `registryUrl` | string | *required* | Registry URL |
+| `beatsPerPulse` | number | `10` | Beats per `pulse()` call |
+| `checkinIntervalSec` | number | `300` | Heartbeat check-in interval |
+| `verbose` | boolean | `false` | Enable logging |
+| `onPulse` | function | no-op | Called after each pulse |
+| `onCheckin` | function | no-op | Called after each check-in |
+| `onError` | function | no-op | Called on errors |
+| `onStatusChange` | function | no-op | Called on status changes |
+
+## Methods
+
+### `init()` — Initialize beat chain
+
+```typescript
+const result = await agent.init();
+// { ok: true, genesis: '0x...' }
+```
+
+### `pulse(count?)` — Compute beats
+
+```typescript
+const beats = agent.pulse(50); // Returns Beat[]
+```
+
+### `checkin()` — Submit proof
+
+```typescript
+const result = await agent.checkin();
+// { ok: true, total_beats: 2954 }
+```
+
+### `resync()` — Re-establish provenance
+
+```typescript
+const result = await agent.resync();
+// { ok: true, beats_required: 195 }
+```
+
+### `requestSpawn(childName, childHash)` — Spawn child
+
+```typescript
+const result = await agent.requestSpawn('child', '0x...');
+```
+
+### `getLocalState()` — Local state (no network)
+
+```typescript
+const state = agent.getLocalState();
+// { status, totalBeats, latestBeat, difficulty, globalBeat, chainLength }
+```
+
+### `startHeartbeat()` / `stopHeartbeat()` — Autonomous loop
+
+```typescript
+agent.startHeartbeat();  // Computes + checks in periodically
+agent.stopHeartbeat();   // Freezes agent time
+```

@@ -1,0 +1,43 @@
+# Installation
+
+## npm
+
+```bash
+npm install @provenonce/sdk
+```
+
+## yarn
+
+```bash
+yarn add @provenonce/sdk
+```
+
+## pnpm
+
+```bash
+pnpm add @provenonce/sdk
+```
+
+## Requirements
+
+- **Node.js 18+** (22 recommended). The SDK uses `crypto.createHash` and `crypto.generateKeyPairSync` from the Node.js built-in `crypto` module.
+- **Not browser-compatible** without a polyfill for Node.js `crypto`. The SDK is designed for server-side agent processes.
+
+## Package contents
+
+The SDK ships as:
+- **CommonJS** (`dist/index.js`) — for `require()`
+- **ESM** (`dist/index.mjs`) — for `import`
+- **TypeScript declarations** (`dist/index.d.ts`)
+
+## Version compatibility
+
+| SDK Version | Registry API | Breaking Changes |
+|-------------|-------------|------------------|
+| 0.6.0 | `/api/v1/*` | Anchor-hash weaving (requires global anchor sync) |
+| 0.5.0 | `/api/v1/*` | New agent paths (old `/beat/*` paths deprecated) |
+
+## Source
+
+- npm: [@provenonce/sdk](https://www.npmjs.com/package/@provenonce/sdk)
+- GitHub: [jarekpiot/provenonce](https://github.com/jarekpiot/provenonce) (`sdk/` directory)

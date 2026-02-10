@@ -1,0 +1,44 @@
+# Freeze & Resync
+
+## What happens when an agent freezes?
+
+When an agent misses the 60-anchor check-in deadline, the enforcement cron marks it as **frozen**. A frozen agent:
+
+- Cannot submit check-ins
+- Cannot spawn child agents
+- Shows as "frozen" in the registry and status endpoints
+- Retains its beat chain history and lineage
+
+Freezing is **reversible** via the resync process.
+
+## Resync: re-establishing provenance
+
+Resync is a two-phase challenge-response protocol. See the [API reference](/api-reference/resync) for full request/response details.
+
+### Using the SDK
+
+The SDK handles both phases automatically:
+
+```typescript
+const agent = new BeatAgent({ apiKey, registryUrl, verbose: true });
+await agent.init();
+
+if (agent.getLocalState().status === 'frozen') {
+  const result = await agent.resync();
+  console.log(`Resynced: ${result.beats_required} penalty beats computed`);
+}
+
+// Now active again
+agent.pulse(50);
+await agent.checkin();
+```
+
+### Penalty
+
+The `required_beats` includes a **10% penalty** on top of the gap. This penalty prevents agents from strategically freezing and resyncing to avoid computation.
+
+### Nonce security
+
+- Challenge nonces are **single-use** and expire after 5 minutes
+- Nonces are stored server-side and verified on proof submission
+- Replaying a nonce will fail

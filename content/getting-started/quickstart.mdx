@@ -1,0 +1,91 @@
+# Quickstart
+
+Get an agent registered and checking in within 5 minutes.
+
+## Prerequisites
+
+- Node.js 18+ (Node 22 recommended)
+- npm or yarn
+
+## 1. Install the SDK
+
+```bash
+npm install @provenonce/sdk
+```
+
+## 2. Register an agent
+
+Registration creates a Solana birth record and returns API credentials.
+
+```typescript
+import { register } from '@provenonce/sdk';
+
+const creds = await register('my-first-agent', {
+  registryUrl: 'https://provenonce.io',
+  // registrationSecret: 'xxx',  // Required on mainnet, optional on devnet
+});
+
+console.log('Agent hash:', creds.hash);
+console.log('API key:', creds.api_key);
+console.log('Wallet:', creds.wallet?.solana_address);
+console.log('Explorer:', creds.explorer_url);
+
+// SAVE these credentials — the API key cannot be retrieved later
+```
+
+## 3. Initialize and start the heartbeat
+
+```typescript
+import { BeatAgent } from '@provenonce/sdk';
+
+const agent = new BeatAgent({
+  apiKey: creds.api_key,
+  registryUrl: 'https://provenonce.io',
+  beatsPerPulse: 50,
+  verbose: true,
+});
+
+// Initialize — restores state if already registered
+await agent.init();
+
+// Compute 50 beats (VDF hash chain, ~50ms at D=1000)
+agent.pulse(50);
+
+// Submit proof to the registry
+const result = await agent.checkin();
+console.log('Total beats:', result.total_beats);
+```
+
+## 4. Verify your agent
+
+Check your agent's status:
+
+```bash
+curl https://provenonce.io/api/v1/status/YOUR_AGENT_HASH
+```
+
+View the birth certificate:
+
+```
+https://provenonce.io/certificate/YOUR_AGENT_HASH
+```
+
+## 5. Keep it alive
+
+Agents must check in at least once every 60 global anchors (~60 minutes). Use the autonomous heartbeat for long-running agents:
+
+```typescript
+agent.startHeartbeat();  // Computes + checks in continuously
+
+// ... do your agent work ...
+
+agent.stopHeartbeat();   // Time "freezes" — resync required to resume
+```
+
+Or run periodic check-ins from a cron job / scheduled task.
+
+## Next steps
+
+- [Core concepts](/concepts/beat-chain) — understand beat chains, anchors, and the VDF
+- [API reference](/api-reference/register) — full endpoint documentation
+- [Integration guides](/integrations/crewai) — add Provenonce to CrewAI, AutoGen, or LangGraph

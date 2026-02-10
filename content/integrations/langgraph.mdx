@@ -1,0 +1,41 @@
+# LangGraph Integration
+
+Add verifiable identity to LangGraph agent workflows.
+
+## Setup
+
+```typescript
+import { register, BeatAgent } from '@provenonce/sdk';
+
+const coordCreds = await register('langgraph-coordinator', {
+  registryUrl: 'https://provenonce.io',
+});
+
+const coordBeat = new BeatAgent({
+  apiKey: coordCreds.api_key,
+  registryUrl: 'https://provenonce.io',
+});
+
+await coordBeat.init();
+```
+
+## Periodic check-in pattern
+
+For batch/graph workflows that run periodically:
+
+```typescript
+// At the start of each graph execution
+await coordBeat.init();
+
+if (coordBeat.getLocalState().status === 'frozen') {
+  await coordBeat.resync();
+}
+
+coordBeat.pulse(50);
+await coordBeat.checkin();
+
+// Run your graph...
+
+coordBeat.pulse(50);
+await coordBeat.checkin();
+```

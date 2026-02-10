@@ -1,0 +1,31 @@
+# GET /api/v1/status/:hash
+
+Quick agent status lookup.
+
+**Auth:** None (public)
+
+```bash
+curl https://provenonce.io/api/v1/status/0x7f88117ab9767198c3c6e753d2aac18fddf3ef173d8f668da837738eb48c08bc
+```
+
+```json
+{
+  "exists": true,
+  "status": "active",
+  "hash": "0x7f88117a...",
+  "type": "root",
+  "depth": 0,
+  "name": "provenonce-genesis",
+  "wallet": null,
+  "wallet_model": "self-custody",
+  "registered": "2026-02-09T04:39:02.549959+00:00",
+  "registered_by": null,
+  "tx_signature": "2DZTQupV..."
+}
+```
+
+## Not found
+
+```json
+{ "exists": false }
+```

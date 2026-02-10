@@ -1,0 +1,41 @@
+# GET /api/v1/verify/:hash
+
+Full agent verification with lineage chain.
+
+**Auth:** None (public)
+
+```bash
+curl https://provenonce.io/api/v1/verify/0x7f88117ab9767198c3c6e753d2aac18fddf3ef173d8f668da837738eb48c08bc
+```
+
+```json
+{
+  "verified": true,
+  "agent": {
+    "hash": "0x7f88117a...",
+    "name": "provenonce-genesis",
+    "type": "root",
+    "depth": 0,
+    "status": "active",
+    "wallet_address": "7xYz...",
+    "wallet_model": "self-custody",
+    "registered": "2026-02-09T04:39:02...",
+    "tx_signature": "2DZTQupV...",
+    "explorer_url": "https://explorer.solana.com/tx/..."
+  },
+  "lineage": [
+    { "hash": "0x7f88...", "name": "provenonce-genesis", "depth": 0 }
+  ],
+  "beat_status": {
+    "total_beats": 2954,
+    "status": "active",
+    "standing": "GOOD"
+  }
+}
+```
+
+For child agents, `lineage` walks from root to current agent.
+
+## Not found
+
+Returns HTTP 404: `{ "error": "Agent not found" }`

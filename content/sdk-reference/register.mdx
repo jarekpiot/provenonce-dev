@@ -1,0 +1,55 @@
+# register()
+
+Register a new agent on the Provenonce registry.
+
+```typescript
+import { register } from '@provenonce/sdk';
+```
+
+## Root registration (default)
+
+```typescript
+const creds = await register('my-agent', {
+  registryUrl: 'https://provenonce.io',
+  registrationSecret: 'xxx', // Required on mainnet
+});
+
+console.log(creds.hash);                    // Agent identity
+console.log(creds.api_key);                 // For API calls
+console.log(creds.wallet.secret_key);       // SAVE — cannot be recovered
+console.log(creds.wallet.solana_address);   // On-chain identity
+```
+
+## Child registration
+
+```typescript
+const childCreds = await register('child-agent', {
+  registryUrl: 'https://provenonce.io',
+  parentHash: parentCreds.hash,
+  parentApiKey: parentCreds.api_key,
+});
+```
+
+## Operator wallet (Model B)
+
+```typescript
+const creds = await register('my-agent', {
+  registryUrl: 'https://provenonce.io',
+  walletModel: 'operator',
+  operatorWalletAddress: 'BASE58_ADDRESS',
+  operatorSignFn: async (message) => hexSignature,
+});
+```
+
+## Options
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `registryUrl` | string | Registry URL |
+| `parentHash` | string | Parent hash (child registration) |
+| `parentApiKey` | string | Parent's API key (child registration) |
+| `registrationSecret` | string | Registration gate (mainnet) |
+| `walletSecretKey` | string | Bring-your-own Ed25519 seed (hex) |
+| `walletModel` | string | `'self-custody'` or `'operator'` |
+| `operatorWalletAddress` | string | Operator's Solana address |
+| `operatorSignFn` | function | Operator's signing function |

@@ -1,0 +1,58 @@
+# POST /api/v1/agent/resync
+
+Re-establish provenance after being frozen. Two-phase challenge-response.
+
+**Auth:** `Authorization: Bearer pvn_...`
+
+## Phase 1: Get challenge
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/resync \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{"action": "challenge"}'
+```
+
+```json
+{
+  "challenge": {
+    "nonce": "a1b2c3d4...",
+    "required_beats": 195,
+    "start_from_hash": "0xabc...",
+    "start_from_beat": 2659,
+    "difficulty": 1000,
+    "sync_to_global": 2607
+  },
+  "gap_beats": 177
+}
+```
+
+## Phase 2: Submit proof
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/resync \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{
+    "action": "prove",
+    "challenge_nonce": "a1b2c3d4...",
+    "proof": {
+      "from_beat": 2659,
+      "to_beat": 2854,
+      "from_hash": "0xabc...",
+      "to_hash": "0xdef...",
+      "beats_computed": 195,
+      "global_anchor": 2607,
+      "anchor_hash": "23f3d41b...",
+      "spot_checks": [...]
+    }
+  }'
+```
+
+```json
+{ "ok": true, "status": "active", "total_beats": 2854 }
+```
+
+Nonces are single-use with 5-minute TTL.
+
+## Rate limit: 5/min per IP
