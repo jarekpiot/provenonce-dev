@@ -1,9 +1,5 @@
 export default {
-  index: {
-    title: 'Home',
-    type: 'page',
-    display: 'hidden',
-  },
+  index: 'Introduction',
   'getting-started': 'Getting Started',
   concepts: 'Concepts',
   'api-reference': 'API Reference',
