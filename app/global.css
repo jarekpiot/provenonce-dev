@@ -14,12 +14,15 @@ code, pre, .nextra-code {
   font-family: 'IBM Plex Mono', monospace;
 }
 
-/* Mobile: prevent code blocks from causing horizontal page scroll */
+/* Mobile: code blocks scroll internally, no page-level horizontal overflow.
+   Do NOT add max-width:100% here — it conflicts with negative margins below
+   and causes asymmetric layout (left extends, right doesn't). */
 pre {
-  max-width: 100%;
   overflow-x: auto;
 }
 
+/* Mobile: code blocks go edge-to-edge (negative margin cancels article padding).
+   The pre auto-width expands to fill viewport via the negative margins. */
 article pre {
   margin-left: -1rem;
   margin-right: -1rem;
@@ -33,9 +36,11 @@ article table {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Mobile: inline code wraps instead of overflowing */
+/* Mobile: inline code wraps at word boundaries instead of overflowing.
+   Use overflow-wrap:anywhere (not word-break:break-all) — it only breaks
+   when the word would overflow, preserving natural break points. */
 article :not(pre) > code {
-  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 @media (min-width: 640px) {
