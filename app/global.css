@@ -13,3 +13,35 @@ body {
 code, pre, .nextra-code {
   font-family: 'IBM Plex Mono', monospace;
 }
+
+/* Mobile: prevent code blocks from causing horizontal page scroll */
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+article pre {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  border-radius: 0;
+}
+
+/* Mobile: tables scroll horizontally without breaking layout */
+article table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile: inline code wraps instead of overflowing */
+article :not(pre) > code {
+  word-break: break-all;
+}
+
+@media (min-width: 640px) {
+  article pre {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 0.5rem;
+  }
+}
