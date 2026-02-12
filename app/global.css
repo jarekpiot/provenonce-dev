@@ -56,15 +56,30 @@ article :not(pre) > code {
 
    Next.js 14's production compiler (Lightning CSS) incorrectly drops nested
    @media rules inside @layer from Nextra's Tailwind v4 CSS. This breaks
-   responsive utilities (x:max-md:hidden, x:md:hidden), causing the desktop
-   sidebar to stay visible on mobile and the mobile nav to show on desktop.
+   ALL responsive utilities (x:max-xl:hidden, x:max-lg:hidden, etc.),
+   causing sidebars to stay visible on mobile and mobile nav on desktop.
 
    These unlayered overrides restore correct responsive behavior.
    Attribute selectors [class~="..."] avoid backslash-escape issues in the
    CSS minification pipeline.
    ========================================================================== */
 
-/* Mobile (< 768px): hide desktop-only elements */
+/* Below xl (< 1280px): hide TOC sidebar + xl-only elements */
+@media (max-width: 79.999rem) {
+  .nextra-toc,
+  [class~="x:max-xl:hidden"] {
+    display: none !important;
+  }
+}
+
+/* Below lg (< 1024px): hide lg-only elements */
+@media (max-width: 63.999rem) {
+  [class~="x:max-lg:hidden"] {
+    display: none !important;
+  }
+}
+
+/* Below md (< 768px): hide left sidebar + desktop nav elements */
 @media (max-width: 47.999rem) {
   .nextra-sidebar,
   [class~="x:max-md:hidden"] {
@@ -72,7 +87,7 @@ article :not(pre) > code {
   }
 }
 
-/* Desktop (>= 768px): hide mobile-only elements */
+/* At md+ (>= 768px): hide mobile-only elements */
 @media (min-width: 48rem) {
   .nextra-mobile-nav,
   .nextra-hamburger,
