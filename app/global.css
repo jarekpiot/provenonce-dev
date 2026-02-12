@@ -50,3 +50,33 @@ article :not(pre) > code {
     border-radius: 0.5rem;
   }
 }
+
+/* ==========================================================================
+   Nextra 4 + Next.js 14 Production CSS Fix
+
+   Next.js 14's production compiler (Lightning CSS) incorrectly drops nested
+   @media rules inside @layer from Nextra's Tailwind v4 CSS. This breaks
+   responsive utilities (x:max-md:hidden, x:md:hidden), causing the desktop
+   sidebar to stay visible on mobile and the mobile nav to show on desktop.
+
+   These unlayered overrides restore correct responsive behavior.
+   Attribute selectors [class~="..."] avoid backslash-escape issues in the
+   CSS minification pipeline.
+   ========================================================================== */
+
+/* Mobile (< 768px): hide desktop-only elements */
+@media (max-width: 47.999rem) {
+  .nextra-sidebar,
+  [class~="x:max-md:hidden"] {
+    display: none !important;
+  }
+}
+
+/* Desktop (>= 768px): hide mobile-only elements */
+@media (min-width: 48rem) {
+  .nextra-mobile-nav,
+  .nextra-hamburger,
+  [class~="x:md:hidden"] {
+    display: none !important;
+  }
+}
