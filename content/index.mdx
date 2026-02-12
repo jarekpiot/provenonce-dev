@@ -21,7 +21,7 @@ npm install @provenonce/sdk
 ```typescript
 import { register, BeatAgent } from '@provenonce/sdk';
 
-// Register a new agent (generates wallet + Solana birth record)
+// Register a new agent (no wallet by default — identity only)
 const creds = await register('my-agent', {
   registryUrl: 'https://provenonce.io',
 });

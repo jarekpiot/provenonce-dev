@@ -11,27 +11,43 @@ curl https://provenonce.io/api/v1/verify/0xfd752396e4fa9ed34d1e3e3218700ef6aafca
 ```json
 {
   "verified": true,
+  "standing": "active",
   "agent": {
     "hash": "0xfd752396...",
     "name": "provenonce-genesis",
     "type": "root",
     "depth": 0,
-    "status": "active",
-    "wallet_address": null,
-    "wallet_model": null,
+    "parent": null,
+    "metadata": null,
+    "wallet": null,
+    "wallet_model": "self-custody",
     "wallet_chain": null,
     "registered": "2026-02-12T...",
     "birth_tx": "BmcxxSCk...",
     "explorer_url": "https://explorer.solana.com/tx/..."
   },
-  "lineage": [
-    { "hash": "0xfd75...", "name": "provenonce-genesis", "depth": 0 }
-  ],
-  "beat_status": {
-    "total_beats": 5613,
+  "beat_state": {
+    "beat_count": 5613,
+    "last_checkin": "2026-02-12T...",
+    "last_checkin_beat": 5600,
+    "last_global_sync": 4200,
+    "difficulty": 1000,
     "status": "active",
-    "standing": "GOOD"
-  }
+    "frozen_at": null
+  },
+  "network": {
+    "current_anchor_index": 4215,
+    "uptime_seconds": 86400
+  },
+  "lineage": [
+    { "hash": "0xfd75...", "type": "root", "depth": 0, "name": "provenonce-genesis", "registered": "2026-02-12T..." }
+  ],
+  "root": {
+    "hash": "0xfd75...",
+    "registered_by": null,
+    "registered": "2026-02-12T..."
+  },
+  "lineage_depth": 1
 }
 ```
 
@@ -39,15 +55,31 @@ curl https://provenonce.io/api/v1/verify/0xfd752396e4fa9ed34d1e3e3218700ef6aafca
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `wallet_address` | string \| null | Solana/Ethereum address (root with wallet) or null |
-| `wallet_model` | string \| null | `"self-custody"`, `"operator"`, or null (no wallet) |
-| `wallet_chain` | string \| null | `"solana"`, `"ethereum"`, or null (no wallet) |
-| `birth_tx` | string | Solana transaction signature for the birth memo |
+| `verified` | boolean | Always `true` for found agents |
+| `standing` | string | `"active"`, `"warning"`, `"frozen"`, or `"registered"` |
+| `agent.wallet` | string \| null | Solana/Ethereum address (root with wallet) or null |
+| `agent.wallet_model` | string | `"self-custody"` or `"operator"` (defaults to `"self-custody"`) |
+| `agent.wallet_chain` | string \| null | `"solana"`, `"ethereum"`, or null (no wallet) |
+| `agent.birth_tx` | string | Solana transaction signature for the birth memo |
+| `agent.metadata` | object \| null | Optional metadata set at registration |
+| `beat_state` | object \| null | null if beat chain not initialized |
+| `beat_state.beat_count` | number | Total beats computed to date |
+| `beat_state.last_checkin` | string \| null | ISO timestamp of most recent check-in |
+| `beat_state.status` | string | `"active"`, `"frozen"`, `"revoked"`, or `"gestating"` |
+| `network.current_anchor_index` | number | Latest global anchor beat index |
+| `network.uptime_seconds` | number \| null | Seconds since registration |
+| `lineage` | array | Parent chain from agent to root |
+| `root` | object | Root agent summary |
+| `lineage_depth` | number | Length of the lineage chain |
 
-For child agents, `lineage` walks from root to current agent.
+For child agents, `lineage` walks from the agent up to the root.
 
 ## Not found
 
-Returns HTTP 404: `{ "error": "Agent not found" }`
+Returns HTTP 404:
+
+```json
+{ "verified": false, "hash": "0x...", "error": "Agent hash not found" }
+```
 
 ## Rate limit: 60/min per IP

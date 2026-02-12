@@ -56,7 +56,11 @@ const creds = await register('my-agent', {
   registryUrl: 'https://provenonce.io',
   walletModel: 'operator',
   operatorWalletAddress: 'BASE58_ADDRESS',
-  operatorSignFn: async (message) => hexSignature,
+  operatorSignFn: async (message) => {
+    // Sign `message` with your Solana keypair and return hex-encoded signature
+    const signature = nacl.sign.detached(Buffer.from(message), yourKeypair.secretKey);
+    return Buffer.from(signature).toString('hex');
+  },
 });
 ```
 

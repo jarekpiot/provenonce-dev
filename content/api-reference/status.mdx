@@ -16,12 +16,13 @@ curl https://provenonce.io/api/v1/status/0xfd752396e4fa9ed34d1e3e3218700ef6aafca
   "type": "root",
   "depth": 0,
   "name": "provenonce-genesis",
+  "metadata": null,
   "wallet": null,
-  "wallet_model": null,
+  "wallet_model": "self-custody",
   "wallet_chain": null,
   "registered": "2026-02-12T...",
   "registered_by": null,
-  "birth_tx": "BmcxxSCk..."
+  "tx_signature": "BmcxxSCk..."
 }
 ```
 
@@ -29,15 +30,20 @@ curl https://provenonce.io/api/v1/status/0xfd752396e4fa9ed34d1e3e3218700ef6aafca
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `exists` | boolean | Whether the agent was found |
+| `status` | string | `"active"`, `"warning"`, `"frozen"`, or `"not_found"` |
 | `wallet` | string \| null | Wallet address (root with wallet) or null |
-| `wallet_model` | string \| null | `"self-custody"`, `"operator"`, or null |
+| `wallet_model` | string | `"self-custody"` or `"operator"` (defaults to `"self-custody"`) |
 | `wallet_chain` | string \| null | `"solana"`, `"ethereum"`, or null |
-| `birth_tx` | string | Solana transaction signature |
+| `metadata` | object \| null | Optional metadata set at registration |
+| `tx_signature` | string | Solana transaction signature |
 
 ## Not found
 
+Returns HTTP 404:
+
 ```json
-{ "exists": false }
+{ "exists": false, "status": "not_found", "hash": "0x..." }
 ```
 
 ## Rate limit: 60/min per IP

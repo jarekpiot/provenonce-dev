@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.8.0 (2026-02-12)
+
+**Chain-agnostic identity (D-62/63/64)**
+
+- **Breaking:** Default registration is now no-wallet (identity only). Pass `walletModel: 'self-custody'` to generate a Solana wallet.
+- Wallet is optional at registration — three paths: no-wallet, Solana self-custody, Ethereum BYO
+- Chain-agnostic wallets: `walletChain` option (`'solana'` or `'ethereum'`)
+- Ethereum BYO registration via `walletAddress` + `walletSignFn` (EIP-191 `personal_sign`)
+- v2 hash formula: `sha256("root:v2:" + wallet + ":" + chain + ":" + ts + ":" + nonce)`
+- 128-bit nonces (was 64-bit)
+- Two-tier rate limits: 5/hr no-wallet, 10/hr wallet-bound
+- `wallet_chain` field in all responses
+
+## v0.7.0 (2026-02-09)
+
+**Anchor-hash weaving + wallet-per-agent**
+
+- Global anchor hash woven into VDF seed (anti-pre-computation)
+- Wallet-per-agent registration (Model A self-custody, Model B operator)
+- `generateWalletKeypair()` for client-side Ed25519 keypair generation
+- Two-phase challenge-response registration flow
+- Difficulty adjustment wired into enforce endpoint
+
 ## v0.6.0 (2026-02-09)
 
 **Anchor-hash weaving (anti-pre-computation)**
@@ -22,7 +45,7 @@
 
 **Spot check enforcement**
 
-- Minimum 5 spot checks required
+- Minimum 3 spot checks required
 - `to_beat` must always be included in spot checks
 - `createCheckinProof()` passes `anchor_hash` through
 

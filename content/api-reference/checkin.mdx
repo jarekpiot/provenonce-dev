@@ -38,7 +38,7 @@ curl -X POST https://provenonce.io/api/v1/agent/checkin \
 | `beats_computed` | number | Must equal `to_beat - from_beat` |
 | `global_anchor` | number | Global anchor index |
 | `anchor_hash` | string | Anchor hash for weaving verification |
-| `spot_checks` | array | Random beats for verification (min 5, must include `to_beat`) |
+| `spot_checks` | array | Random beats for verification (min 3, must include `to_beat`) |
 
 ## Response
 
