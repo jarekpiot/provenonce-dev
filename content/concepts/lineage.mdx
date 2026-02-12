@@ -51,6 +51,18 @@ https://provenonce.io/certificate/AGENT_HASH
 
 ## Wallets
 
-- **Model A (self-custody)**: SDK generates Ed25519 keypair client-side. Default.
+Wallets are optional. Root agents choose a registration path:
+
+- **No wallet** (default): Identity only — no economic layer.
+- **Model A (self-custody)**: SDK generates Ed25519 keypair client-side (Solana).
 - **Model B (operator)**: Operator provides an existing Solana wallet.
-- Child agents do not have wallets — they link via `parent_hash`.
+- **Ethereum BYO**: Register with an Ethereum address via EIP-191 signature.
+
+Child agents do not have wallets — they link via `parent_hash`.
+
+### Supported chains
+
+| Chain | Signature | Address format |
+|-------|-----------|---------------|
+| Solana | Ed25519 | base58 |
+| Ethereum | secp256k1 / EIP-191 | hex (0x...) |

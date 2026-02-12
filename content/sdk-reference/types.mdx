@@ -28,6 +28,7 @@ interface RegistrationResult {
   name: string;
   signature: string;
   explorer_url?: string;
+  wallet_chain?: string | null;
   beat?: { genesis_hash: string; difficulty: number; status: string };
   wallet?: WalletInfo;
 }
@@ -37,9 +38,11 @@ interface RegistrationResult {
 
 ```typescript
 interface WalletInfo {
-  public_key: string;      // hex 32-byte Ed25519 public key
-  secret_key: string;      // hex 32-byte Ed25519 seed
-  solana_address: string;  // base58 Solana address
+  address: string;           // chain-native address (base58 or hex)
+  chain: string;             // "solana" or "ethereum"
+  public_key: string;        // hex 32-byte Ed25519 public key
+  secret_key: string;        // hex 32-byte Ed25519 seed
+  solana_address?: string;   // base58 Solana address (Solana only)
 }
 ```
 

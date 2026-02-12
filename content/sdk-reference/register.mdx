@@ -6,28 +6,47 @@ Register a new agent on the Provenonce registry.
 import { register } from '@provenonce/sdk';
 ```
 
-## Root registration (default)
+## No-wallet registration (default)
 
 ```typescript
 const creds = await register('my-agent', {
   registryUrl: 'https://provenonce.io',
-  registrationSecret: 'xxx', // Required on mainnet
+  // registrationSecret: 'xxx',  // Required on mainnet, optional on devnet
 });
 
-console.log(creds.hash);                    // Agent identity
-console.log(creds.api_key);                 // For API calls
-console.log(creds.wallet.secret_key);       // SAVE — cannot be recovered
-console.log(creds.wallet.solana_address);   // On-chain identity
+console.log(creds.hash);       // Agent identity
+console.log(creds.api_key);    // For API calls
+// No wallet — identity only. Agent is on-chain and verifiable.
 ```
 
-## Child registration
+## Solana self-custody wallet (opt-in)
 
 ```typescript
-const childCreds = await register('child-agent', {
+const creds = await register('my-org', {
   registryUrl: 'https://provenonce.io',
-  parentHash: parentCreds.hash,
-  parentApiKey: parentCreds.api_key,
+  walletModel: 'self-custody',
 });
+
+console.log(creds.wallet?.address);      // Solana address
+console.log(creds.wallet?.secret_key);   // SAVE — cannot be recovered
+console.log(creds.wallet?.chain);        // "solana"
+```
+
+## Ethereum bring-your-own wallet
+
+```typescript
+import { ethers } from 'ethers';
+const wallet = new ethers.Wallet('<your-private-key>');
+
+const creds = await register('my-org', {
+  registryUrl: 'https://provenonce.io',
+  walletChain: 'ethereum',
+  walletAddress: wallet.address,
+  walletSignFn: (msg) => wallet.signMessage(msg),
+});
+
+console.log(creds.wallet?.address);  // Ethereum address
+console.log(creds.wallet?.chain);    // "ethereum"
 ```
 
 ## Operator wallet (Model B)
@@ -41,6 +60,16 @@ const creds = await register('my-agent', {
 });
 ```
 
+## Child registration
+
+```typescript
+const childCreds = await register('child-agent', {
+  registryUrl: 'https://provenonce.io',
+  parentHash: parentCreds.hash,
+  parentApiKey: parentCreds.api_key,
+});
+```
+
 ## Options
 
 | Property | Type | Description |
@@ -49,7 +78,10 @@ const creds = await register('my-agent', {
 | `parentHash` | string | Parent hash (child registration) |
 | `parentApiKey` | string | Parent's API key (child registration) |
 | `registrationSecret` | string | Registration gate (mainnet) |
+| `walletModel` | string | `'self-custody'` or `'operator'` (opt-in wallet) |
+| `walletChain` | string | `'solana'` or `'ethereum'` |
+| `walletAddress` | string | Existing wallet address (Ethereum BYO) |
+| `walletSignFn` | function | Signing function for BYO wallets |
 | `walletSecretKey` | string | Bring-your-own Ed25519 seed (hex) |
-| `walletModel` | string | `'self-custody'` or `'operator'` |
 | `operatorWalletAddress` | string | Operator's Solana address |
 | `operatorSignFn` | function | Operator's signing function |

@@ -4,7 +4,38 @@ Register a new agent. Creates a Solana SPL Memo birth record.
 
 **Base URL:** `https://provenonce.io`
 
-## Root registration (two-phase)
+## No-wallet registration (default, single-phase)
+
+The simplest path — identity only, no economic layer.
+
+```bash
+curl -X POST https://provenonce.io/api/v1/register \
+  -H "Content-Type: application/json" \
+  -H "x-registration-secret: YOUR_SECRET" \
+  -d '{"name": "my-agent"}'
+```
+
+### Response
+
+```json
+{
+  "ok": true,
+  "hash": "0xfd75...",
+  "api_key": "pvn_eyJo...",
+  "secret": "abc123...",
+  "type": "root",
+  "parent": null,
+  "depth": 0,
+  "name": "my-agent",
+  "wallet_address": null,
+  "wallet_model": null,
+  "wallet_chain": null,
+  "signature": "5xYz...",
+  "explorer_url": "https://explorer.solana.com/tx/..."
+}
+```
+
+## Self-custody wallet registration (two-phase)
 
 ### Phase 1: Get challenge
 
@@ -33,26 +64,15 @@ curl -X POST https://provenonce.io/api/v1/register \
 
 The SDK handles signing automatically. If calling directly, sign `provenonce-register:<nonce>:<pubkey_hex>:<name>` with your Ed25519 private key.
 
-### Response
+## Operator wallet — Model B (two-phase)
 
-```json
-{
-  "hash": "0x7f88...",
-  "api_key": "pvn_eyJo...",
-  "secret": "abc123...",
-  "type": "root",
-  "parent": null,
-  "depth": 0,
-  "name": "my-agent",
-  "signature": "5xYz...",
-  "explorer_url": "https://explorer.solana.com/tx/..."
-}
-```
-
-## Operator wallet (Model B)
-
-Phase 1: same but add `"wallet_model": "operator"`.
+Phase 1: same as above but add `"wallet_model": "operator"`.
 Phase 2: sign `provenonce-register-operator:<nonce>:<address>:<name>` and send `operator_wallet_address` + `wallet_signature`.
+
+## Ethereum wallet (two-phase)
+
+Phase 1: send `"action": "challenge"` with `"wallet_chain": "ethereum"`.
+Phase 2: sign `provenonce-register-ethereum:<nonce>:<address>:<name>` using EIP-191 `personal_sign` and send `wallet_chain`, `wallet_address`, `wallet_signature`, `wallet_nonce`.
 
 ## Child registration (single-phase)
 
@@ -63,6 +83,15 @@ curl -X POST https://provenonce.io/api/v1/register \
   -d '{"name": "child-agent", "parent": "0xPARENT_HASH..."}'
 ```
 
+Children inherit their parent's lineage. No wallet is assigned to children.
+
+## Supported chains
+
+| Chain | `wallet_chain` | Signature scheme |
+|-------|---------------|-----------------|
+| Solana | `"solana"` | Ed25519 (`provenonce-register:...` prefix) |
+| Ethereum | `"ethereum"` | secp256k1 / EIP-191 (`provenonce-register-ethereum:...` prefix) |
+
 ## Headers
 
 | Header | Required | Description |
@@ -71,4 +100,7 @@ curl -X POST https://provenonce.io/api/v1/register \
 | `x-registration-secret` | Root only (mainnet) | Optional on devnet |
 | `Authorization` | Child only | Parent's API key |
 
-## Rate limit: 5/min per IP
+## Rate limits
+
+- **No-wallet registration:** 5/hour per IP
+- **Wallet-bound registration:** 10/hour per IP

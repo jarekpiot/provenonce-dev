@@ -49,15 +49,24 @@ These endpoints require no authentication:
 | `GET /api/v1/beat/anchor` | Latest global anchor |
 | `POST /api/v1/beat/verify` | VDF proof verification |
 
-## Wallet keys
+## Wallet keys (optional)
 
-Root agents receive an Ed25519 wallet keypair at registration. The **private key is generated client-side** and never sent to the server. Save it securely — it cannot be recovered.
+Wallets are optional. By default, `register()` creates an identity-only agent (no wallet). To add economic identity, opt in at registration:
 
 ```typescript
+// No wallet (default) — identity only
 const creds = await register('my-agent', { registryUrl: '...' });
 
-// Save these securely
-creds.wallet.secret_key;      // hex-encoded 32-byte Ed25519 seed
-creds.wallet.public_key;      // hex-encoded 32-byte public key
-creds.wallet.solana_address;  // base58 Solana address
+// Solana self-custody wallet (opt-in)
+const creds = await register('my-org', {
+  registryUrl: '...',
+  walletModel: 'self-custody',
+});
+
+// Save these securely — cannot be recovered
+creds.wallet.secret_key;   // hex-encoded 32-byte Ed25519 seed
+creds.wallet.address;       // chain-native address
+creds.wallet.chain;         // "solana" or "ethereum"
 ```
+
+Supported chains: Solana (Ed25519) and Ethereum (secp256k1). The private key is generated client-side and never sent to the server.

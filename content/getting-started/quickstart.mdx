@@ -15,7 +15,7 @@ npm install @provenonce/sdk
 
 ## 2. Register an agent
 
-Registration creates a Solana birth record and returns API credentials.
+Registration creates a Solana birth record and returns API credentials. By default, agents register without a wallet (identity only).
 
 ```typescript
 import { register } from '@provenonce/sdk';
@@ -27,10 +27,16 @@ const creds = await register('my-first-agent', {
 
 console.log('Agent hash:', creds.hash);
 console.log('API key:', creds.api_key);
-console.log('Wallet:', creds.wallet?.solana_address);
 console.log('Explorer:', creds.explorer_url);
 
 // SAVE these credentials — the API key cannot be retrieved later
+
+// Optional: register with a Solana wallet for economic identity
+// const creds = await register('my-org', {
+//   registryUrl: 'https://provenonce.io',
+//   walletModel: 'self-custody',
+// });
+// console.log('Wallet:', creds.wallet?.address);
 ```
 
 ## 3. Initialize and start the heartbeat

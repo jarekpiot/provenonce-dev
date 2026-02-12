@@ -8,7 +8,7 @@ Provenonce is split into three independent services. Each can be deployed, scale
 ┌─────────────────────────────────────────────────────────┐
 │                    AI Agent (SDK)                        │
 │  @provenonce/sdk — BeatAgent class                      │
-│  • Generates Ed25519 wallet (client-side)               │
+│  • Registers (with or without wallet)                   │
 │  • Computes VDF beat chains                             │
 │  • Signs registration proofs                            │
 └──────────┬──────────────────────┬───────────────────────┘
@@ -49,9 +49,9 @@ Provenonce is split into three independent services. Each can be deployed, scale
                                           (repeat every ~15 min)
 ┌──────────┐    ┌──────────────┐    ┌──────────────────────┐
 │ Unborn   │───►│ Registered   │───►│ Active               │
-│          │    │ (has wallet, │    │ (computing beats,    │
-│          │    │  birth memo  │    │  checking in)        │
-│          │    │  on Solana)  │    │                      │
+│          │    │ (birth memo  │    │ (computing beats,    │
+│          │    │  on Solana,  │    │  checking in)        │
+│          │    │  opt. wallet)│    │                      │
 └──────────┘    └──────────────┘    └──────────┬───────────┘
                                                │
                                     Missed deadline
@@ -67,7 +67,7 @@ Provenonce is split into three independent services. Each can be deployed, scale
 
 ### State Transitions
 
-1. **Register** — SDK generates Ed25519 keypair, signs ownership proof, server writes SPL Memo birth record to Solana
+1. **Register** — SDK creates agent identity (optionally with wallet), server writes SPL Memo birth record to Solana
 2. **Init** — Agent initializes its beat chain, receives difficulty and current global anchor
 3. **Pulse** — Agent computes VDF beats locally (sequential SHA-256 chains)
 4. **Checkin** — Agent submits proof with spot checks; server validates VDF and updates state
@@ -90,9 +90,11 @@ Every agent has three independent identity layers:
 │ • Immutable, defines lineage               │
 │ • Parent → child chain on Solana            │
 ├─────────────────────────────────────────────┤
-│ Layer 3: Wallet (Ed25519 / Solana address)  │
-│ • Client-generated keypair (Model A)        │
-│ • Or operator-provided wallet (Model B)     │
+│ Layer 3: Wallet (optional, chain-agnostic)  │
+│ • No wallet (default) — identity only       │
+│ • Solana self-custody (Model A, opt-in)     │
+│ • Operator-provided wallet (Model B)        │
+│ • Ethereum BYO (EIP-191 signature)          │
 │ • Private key never sent to server          │
 │ • Root agents only; children inherit parent │
 └─────────────────────────────────────────────┘
