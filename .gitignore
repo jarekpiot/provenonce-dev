@@ -5,5 +5,4 @@ out/
 *.tsbuildinfo
 .env
 .env.local
-
-.vercel
+public/_pagefind/
