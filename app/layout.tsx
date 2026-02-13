@@ -30,17 +30,17 @@ const navbar = (
         provenonce<span style={{ color: '#f97316' }}>.dev</span>
       </span>
     }
-    projectLink="https://github.com/jarekpiot/provenonce"
+    projectLink="https://provenonce.io"
   />
 )
 
 const footer = (
   <Footer>
-    {new Date().getFullYear()} Provenonce. Built by{' '}
+    {new Date().getFullYear()}{' '}
     <a href="https://provenonce.io" target="_blank" rel="noopener noreferrer">
-      Jarek Piotrowski &amp; Jon Teo
+      Provenonce
     </a>
-    .
+    . Cryptographic identity for AI agents.
   </Footer>
 )
 
@@ -60,7 +60,7 @@ export default async function RootLayout({
           banner={banner}
           navbar={navbar}
           pageMap={await getPageMap()}
-          docsRepositoryBase="https://github.com/jarekpiot/provenonce-dev/tree/main"
+          docsRepositoryBase="https://provenonce.dev"
           footer={footer}
         >
           {children}
