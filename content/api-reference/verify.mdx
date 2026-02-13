@@ -1,6 +1,6 @@
 # GET /api/v1/verify/:hash
 
-Full agent verification with lineage chain.
+Full agent verification with lineage chain and cryptographic lineage proof.
 
 **Auth:** None (public)
 
@@ -22,18 +22,20 @@ curl https://provenonce.io/api/v1/verify/0xfd752396e4fa9ed34d1e3e3218700ef6aafca
     "wallet": null,
     "wallet_model": "self-custody",
     "wallet_chain": null,
-    "registered": "2026-02-12T...",
-    "birth_tx": "BmcxxSCk...",
-    "explorer_url": "https://explorer.solana.com/tx/..."
+    "registered": "2026-02-12T..."
+  },
+  "sigil": {
+    "identity_class": "sovereign",
+    "issued_at": "2026-02-12T...",
+    "tx_signature": "BmcxxSCk..."
   },
   "beat_state": {
     "beat_count": 5613,
-    "last_checkin": "2026-02-12T...",
-    "last_checkin_beat": 5600,
+    "last_heartbeat": "2026-02-12T...",
+    "last_heartbeat_beat": 5600,
     "last_global_sync": 4200,
     "difficulty": 1000,
-    "status": "active",
-    "frozen_at": null
+    "status": "active"
   },
   "network": {
     "current_anchor_index": 4215,
@@ -42,6 +44,12 @@ curl https://provenonce.io/api/v1/verify/0xfd752396e4fa9ed34d1e3e3218700ef6aafca
   "lineage": [
     { "hash": "0xfd75...", "type": "root", "depth": 0, "name": "provenonce-genesis", "registered": "2026-02-12T..." }
   ],
+  "lineage_proof": {
+    "signature": "base64-encoded-ed25519-signature...",
+    "chain_hash": "sha256-of-lineage-chain...",
+    "valid_from": "2026-02-12T12:00:00.000Z",
+    "valid_until": "2026-02-13T12:00:00.000Z"
+  },
   "root": {
     "hash": "0xfd75...",
     "registered_by": null,
@@ -56,21 +64,74 @@ curl https://provenonce.io/api/v1/verify/0xfd752396e4fa9ed34d1e3e3218700ef6aafca
 | Field | Type | Description |
 |-------|------|-------------|
 | `verified` | boolean | Always `true` for found agents |
-| `standing` | string | `"active"`, `"warning"`, `"frozen"`, or `"registered"` |
+| `standing` | string | `"active"`, `"stale"`, `"refused"`, or `"registered"` |
 | `agent.wallet` | string \| null | Solana/Ethereum address (root with wallet) or null |
 | `agent.wallet_model` | string | `"self-custody"` or `"operator"` (defaults to `"self-custody"`) |
 | `agent.wallet_chain` | string \| null | `"solana"`, `"ethereum"`, or null (no wallet) |
-| `agent.birth_tx` | string | Solana transaction signature for the birth memo |
 | `agent.metadata` | object \| null | Optional metadata set at registration |
 | `beat_state` | object \| null | null if beat chain not initialized |
 | `beat_state.beat_count` | number | Total beats computed to date |
-| `beat_state.last_checkin` | string \| null | ISO timestamp of most recent check-in |
-| `beat_state.status` | string | `"active"`, `"frozen"`, `"revoked"`, or `"gestating"` |
+| `beat_state.last_heartbeat` | string \| null | ISO timestamp of most recent heartbeat |
+| `beat_state.status` | string | `"active"`, `"stale"`, `"revoked"`, or `"gestating"` |
 | `network.current_anchor_index` | number | Latest global anchor beat index |
 | `network.uptime_seconds` | number \| null | Seconds since registration |
 | `lineage` | array | Parent chain from agent to root |
 | `root` | object | Root agent summary |
 | `lineage_depth` | number | Length of the lineage chain |
+
+## Standing values
+
+| Standing | Meaning |
+|----------|---------|
+| `active` | Agent is heartbeating and in good standing |
+| `stale` | Agent has not heartbeated recently — market staleness applies |
+| `refused` | Agent has been refused by the network |
+| `registered` | Agent is registered but has not initialized a beat chain |
+
+## SIGIL section
+
+Present for agents that hold a SIGIL identity tier. `null` if the agent has no SIGIL.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `identity_class` | string | `"basic"`, `"verified"`, or `"sovereign"` |
+| `issued_at` | string | ISO timestamp of SIGIL issuance |
+| `tx_signature` | string | Solana transaction signature for the SIGIL purchase |
+
+## Lineage proof
+
+The `lineage_proof` section contains a cryptographic proof of the agent's lineage chain, signed by the Provenonce authority key. Proofs are **Ed25519-signed** and valid for **24 hours**.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `signature` | string | Base64-encoded Ed25519 signature over the chain hash |
+| `chain_hash` | string | SHA-256 hash of the serialized lineage chain |
+| `valid_from` | string | ISO timestamp — proof validity start |
+| `valid_until` | string | ISO timestamp — proof expiry (24h after issuance) |
+
+### Offline verification
+
+You can verify lineage proofs offline using the Provenonce authority public key, available at:
+
+```
+https://provenonce.io/.well-known/provenonce-authority.json
+```
+
+```json
+{
+  "authority_key": "base64-encoded-ed25519-public-key",
+  "algorithm": "Ed25519",
+  "key_id": "provenonce-authority-v1"
+}
+```
+
+To verify:
+1. Fetch the authority key from `/.well-known/provenonce-authority.json` (cache it).
+2. Reconstruct the `chain_hash` from the `lineage` array.
+3. Verify the `signature` against the `chain_hash` using the authority public key.
+4. Check that the current time is between `valid_from` and `valid_until`.
+
+This allows any party to verify an agent's lineage without calling the Provenonce API.
 
 For child agents, `lineage` walks from the agent up to the root.
 

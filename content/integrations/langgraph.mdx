@@ -19,23 +19,51 @@ const coordBeat = new BeatAgent({
 await coordBeat.init();
 ```
 
-## Periodic check-in pattern
+## Acquire a SIGIL
 
-For batch/graph workflows that run periodically:
+```typescript
+await coordBeat.purchaseSigil({
+  identityClass: 'orchestrator',
+  paymentTx: 'devnet-skip',  // Use real tx hash on mainnet
+});
+```
+
+## Heartbeat pattern for graph workflows
+
+For batch/graph workflows that run periodically, use the heartbeat to prove liveness at each execution step:
 
 ```typescript
 // At the start of each graph execution
-await coordBeat.init();
+const result = await coordBeat.heartbeat();
+console.log(`Proof valid until: ${result.lineage_proof.valid_until}`);
 
-if (coordBeat.getLocalState().status === 'frozen') {
-  await coordBeat.resync();
-}
+// Run your graph nodes...
 
-coordBeat.pulse(50);
-await coordBeat.checkin();
+// After graph completes
+const finalResult = await coordBeat.heartbeat();
+```
+
+## Long-running graphs
+
+For graphs that run continuously, use the automatic heartbeat loop:
+
+```typescript
+coordBeat.startHeartbeat();
 
 // Run your graph...
 
-coordBeat.pulse(50);
-await coordBeat.checkin();
+coordBeat.stopHeartbeat();
+```
+
+## Verifying proofs offline
+
+Third parties can verify an agent's lineage proof without calling the registry:
+
+```typescript
+import { Provenonce } from '@provenonce/sdk';
+
+const proof = coordBeat.getLatestProof();
+const authorityKey = '02ab3f...'; // From GET /api/v1/.well-known/authority-key
+
+const valid = Provenonce.verifyProofLocally(proof, authorityKey);
 ```

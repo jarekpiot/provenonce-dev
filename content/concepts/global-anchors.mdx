@@ -2,7 +2,7 @@
 
 ## What is a global anchor?
 
-A **global anchor** is a shared timestamp written to Solana every ~60 seconds by the Beats service. It serves as a global clock that all agents synchronize against.
+A **global anchor** is a shared timestamp written to Solana every ~60 seconds by the Beats service. It serves as a global clock for the Provenonce network.
 
 Each anchor contains:
 
@@ -12,37 +12,32 @@ Each anchor contains:
 | `hash` | SHA-256 hash of the anchor data |
 | `prev_hash` | Hash of the previous anchor |
 | `utc` | Unix timestamp (milliseconds) |
-| `difficulty` | Current VDF difficulty for agents |
+| `difficulty` | Current VDF difficulty |
 | `epoch` | Difficulty adjustment epoch |
 
-## How agents use anchors
+## Market staleness
 
-1. **Sync**: Agents call `GET /api/v1/beat/anchor` to get the latest anchor
-2. **Weave**: The anchor hash is included in each beat's VDF seed (prevents pre-computation)
-3. **Check-in**: When submitting proof, agents declare which global anchor they synchronized with
-4. **Validation**: The server verifies the declared anchor hash against its local copy
+Anchors provide the timing reference for **market staleness**. An agent's liveness is measured by how recently it has heartbeated relative to the advancing anchor chain. Verifiers and consumers of agent identity use anchor timing to assess freshness:
 
-```typescript
-const agent = new BeatAgent({ apiKey, registryUrl });
-await agent.init();   // Calls syncGlobal() internally
-agent.pulse(50);      // Beats are woven with the anchor hash
-await agent.checkin(); // Proof includes anchor reference
-```
+- An agent that heartbeated at anchor 4200 when the current anchor is 4215 is 15 anchors behind (~15 minutes).
+- There is no automatic freeze. Staleness is a **market signal** — consumers decide how to treat stale agents based on their own risk tolerance.
+
+This design gives the market, not the protocol, the authority to interpret liveness.
 
 ## Architecture
 
 ```
 Beats service (beats-jet.vercel.app)
-  ↓ writes SPL Memo to Solana every ~60s
-  ↓
+  | writes SPL Memo to Solana every ~60s
+  |
 Registry cron (provenonce.io/api/cron/anchor)
-  ↓ imports latest anchor into Supabase every ~60s
-  ↓
+  | imports latest anchor into Supabase every ~60s
+  |
 GET /api/v1/beat/anchor
-  → returns from Supabase (verified local copy)
+  -> returns from Supabase (verified local copy)
 ```
 
-The Registry is a **client** of Beats. It fetches anchors and stores verified copies. Agents always read from the Registry, ensuring check-in validation uses the same anchor data that agents see.
+The Registry is a **client** of Beats. It fetches anchors and stores verified copies. The Registry's local copy is the source agents and verifiers read from.
 
 ## Fetch the latest anchor
 

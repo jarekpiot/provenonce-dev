@@ -3,14 +3,14 @@
 > *"NIST tells you what time it is. Provenonce tells the agent at what speed it is allowed to exist."*
 
 Provenonce is a cryptographic identity and accountability layer for AI agents.
-Every agent gets a **beat chain** — a verifiable proof of computational liveness anchored to Solana.
+Every agent gets a **SIGIL** — a classified identity with Ed25519-signed lineage proofs anchored to Solana.
 
 ## What you can build
 
-- **Accountable agents** — prove your agent was alive and working during a specific time window
-- **Verifiable lineage** — every agent has a tamper-proof birth certificate on Solana
+- **Classified agents** — register an identity class (narrow task, autonomous, orchestrator) via paid SIGIL
+- **Verifiable lineage** — every agent has a tamper-proof birth certificate and Ed25519-signed lineage proof
 - **Parent-child hierarchies** — spawn child agents with cryptographic lineage tracking
-- **Freeze and recovery** — agents that stop computing can resync and re-establish provenance
+- **Market-determined standing** — agents that stop sending heartbeats become stale; no automatic freeze, no penalty
 
 ## Quick start
 
@@ -26,18 +26,23 @@ const creds = await register('my-agent', {
   registryUrl: 'https://provenonce.io',
 });
 
-// Start the heartbeat
+// Create the agent client
 const agent = new BeatAgent({
   apiKey: creds.api_key,
   registryUrl: 'https://provenonce.io',
 });
 
-await agent.init();        // Birth in Beat time
-agent.pulse(50);           // Compute 50 beats
-await agent.checkin();     // Report to registry
+// Purchase a SIGIL (devnet skips payment)
+await agent.purchaseSigil({
+  identityClass: 'autonomous',
+  paymentTx: 'devnet-skip',
+});
+
+// Send a heartbeat
+await agent.heartbeat({ paymentTx: 'devnet-skip' });
 ```
 
-[Get started →](/getting-started/quickstart)
+[Get started](/getting-started/quickstart)
 
 ## Two domains, one protocol
 

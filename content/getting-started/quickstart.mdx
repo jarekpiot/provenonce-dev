@@ -1,6 +1,6 @@
 # Quickstart
 
-Get an agent registered and checking in within 5 minutes.
+Get an agent registered, classified, and sending heartbeats within 5 minutes.
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ npm install @provenonce/sdk
 
 ## 2. Register an agent
 
-Registration creates a Solana birth record and returns API credentials. By default, agents register without a wallet (identity only).
+Registration creates agent identity in the Registry and returns API credentials.
 
 ```typescript
 import { register } from '@provenonce/sdk';
@@ -27,7 +27,6 @@ const creds = await register('my-first-agent', {
 
 console.log('Agent hash:', creds.hash);
 console.log('API key:', creds.api_key);
-console.log('Explorer:', creds.explorer_url);
 
 // SAVE these credentials — the API key cannot be retrieved later
 
@@ -39,7 +38,15 @@ console.log('Explorer:', creds.explorer_url);
 // console.log('Wallet:', creds.wallet?.address);
 ```
 
-## 3. Initialize and start the heartbeat
+## 3. Purchase a SIGIL
+
+A SIGIL classifies your agent's identity and activates lineage proofs. Choose an identity class:
+
+| Class | Purpose |
+|-------|---------|
+| `narrow_task` | Single-purpose agents (search, transform, fetch) |
+| `autonomous` | Self-directed agents with goals |
+| `orchestrator` | Agents that manage other agents |
 
 ```typescript
 import { BeatAgent } from '@provenonce/sdk';
@@ -47,27 +54,46 @@ import { BeatAgent } from '@provenonce/sdk';
 const agent = new BeatAgent({
   apiKey: creds.api_key,
   registryUrl: 'https://provenonce.io',
-  beatsPerPulse: 50,
-  verbose: true,
 });
 
-// Initialize — restores state if already registered
-await agent.init();
+const sigil = await agent.purchaseSigil({
+  identityClass: 'autonomous',
+  paymentTx: 'devnet-skip', // Devnet bypasses payment verification
+});
 
-// Compute 50 beats (VDF hash chain, ~50ms at D=1000)
-agent.pulse(50);
-
-// Submit proof to the registry
-const result = await agent.checkin();
-console.log('Total beats:', result.total_beats);
+console.log('Identity class:', sigil.identity_class);
+console.log('Lineage proof:', sigil.lineage_proof);
 ```
 
-## 4. Verify your agent
+## 4. Send heartbeats
 
-Check your agent's status:
+Heartbeats prove your agent is alive. Each heartbeat returns a fresh Ed25519-signed lineage proof valid for 24 hours.
+
+```typescript
+const result = await agent.heartbeat({
+  paymentTx: 'devnet-skip', // Devnet bypasses payment verification
+});
+
+console.log('Lineage proof:', result.lineage_proof);
+console.log('Proof expires:', result.proof_expires_at);
+```
+
+For long-running agents, use the autonomous heartbeat loop:
+
+```typescript
+agent.startHeartbeat(); // Sends heartbeats automatically
+
+// ... do your agent work ...
+
+agent.stopHeartbeat(); // Agent becomes stale over time — no penalty
+```
+
+## 5. Verify your agent
+
+Check your agent's status and lineage proof:
 
 ```bash
-curl https://provenonce.io/api/v1/status/YOUR_AGENT_HASH
+curl https://provenonce.io/api/v1/verify/YOUR_AGENT_HASH
 ```
 
 View the birth certificate:
@@ -76,22 +102,36 @@ View the birth certificate:
 https://provenonce.io/certificate/YOUR_AGENT_HASH
 ```
 
-## 5. Keep it alive
-
-Agents must check in at least once every 60 global anchors (~60 minutes). Use the autonomous heartbeat for long-running agents:
+Verify a lineage proof offline using the authority public key:
 
 ```typescript
-agent.startHeartbeat();  // Computes + checks in continuously
+import { Provenonce } from '@provenonce/sdk';
 
-// ... do your agent work ...
+// Fetch the authority key
+const res = await fetch('https://provenonce.io/.well-known/provenonce-authority.json');
+const { public_key_hex } = await res.json();
 
-agent.stopHeartbeat();   // Time "freezes" — resync required to resume
+// Verify without contacting the server
+const valid = Provenonce.verifyProofLocally(proof, public_key_hex);
 ```
 
-Or run periodic check-ins from a cron job / scheduled task.
+## 6. Refresh a proof
+
+Lineage proofs expire after 24 hours. Refresh without sending a full heartbeat:
+
+```typescript
+const fresh = await agent.reissueProof({
+  paymentTx: 'devnet-skip',
+});
+
+console.log('New proof:', fresh.lineage_proof);
+console.log('Expires:', fresh.proof_expires_at);
+```
 
 ## Next steps
 
-- [Core concepts](/concepts/beat-chain) — understand beat chains, anchors, and the VDF
+- [Core concepts](/concepts/architecture) — understand the three-service architecture
+- [Beat chain](/concepts/beat-chain) — how the VDF anchors work
+- [Lineage & proofs](/concepts/lineage) — Ed25519-signed proofs and offline verification
+- [Market staleness](/concepts/market-staleness) — what happens when heartbeats lapse
 - [API reference](/api-reference/register) — full endpoint documentation
-- [Integration guides](/integrations/crewai) — add Provenonce to CrewAI, AutoGen, or LangGraph

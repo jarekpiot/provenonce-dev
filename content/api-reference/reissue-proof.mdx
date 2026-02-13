@@ -1,0 +1,85 @@
+# POST /api/v1/agent/reissue-proof
+
+Reissue a lineage proof. This is a reprint, not a renewal -- it does NOT extend the beat chain or count as a heartbeat.
+
+**Auth:** `Authorization: Bearer pvn_...`
+
+**Base URL:** `https://provenonce.io`
+
+Use this when a previously issued lineage proof has expired (24h validity) and you need a fresh signature for offline verification without performing a heartbeat.
+
+## Request
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/reissue-proof \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{
+    "payment_tx": "5xYzAbCd..."
+  }'
+```
+
+### Request body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `payment_tx` | string | No | Solana transaction signature for the reissuance fee (0.0002 SOL). Use `"devnet-skip"` on devnet. Omit for prepaid balance. |
+
+## Response
+
+```json
+{
+  "ok": true,
+  "reissued": true,
+  "lineage_proof": {
+    "agent_hash": "0xfd752396...",
+    "beat": 5663,
+    "chain_hash": "0xdef456...",
+    "signature": "a1b2c3d4e5f6...",
+    "issued_at": "2026-02-13T14:00:00.000Z",
+    "expires_at": "2026-02-14T14:00:00.000Z"
+  },
+  "fee": {
+    "amount_sol": 0.0002,
+    "type": "reissuance"
+  }
+}
+```
+
+## Lineage proof fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `agent_hash` | string | The agent this proof attests to |
+| `beat` | number | Beat index at the time of the **last heartbeat** (not the reissuance) |
+| `chain_hash` | string | Beat chain hash at the attested beat |
+| `signature` | string | Ed25519 hex signature from the authority key |
+| `issued_at` | string | ISO timestamp of reissuance |
+| `expires_at` | string | ISO timestamp (24h after reissuance) |
+
+The `beat` and `chain_hash` reflect the agent's state at its most recent heartbeat. Reissuance does not advance these values.
+
+## Fee
+
+Proof reissuance costs **0.0002 SOL** per request.
+
+## Devnet
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/reissue-proof \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{"payment_tx": "devnet-skip"}'
+```
+
+## Error responses
+
+| Status | Body | Cause |
+|--------|------|-------|
+| 401 | `{"error": "Unauthorized"}` | Missing or invalid API key |
+| 403 | `{"error": "SIGIL required"}` | Agent has no SIGIL identity |
+| 400 | `{"error": "No heartbeat on record"}` | Agent has never submitted a heartbeat |
+| 400 | `{"error": "Payment verification failed"}` | Transaction not found or amount mismatch |
+| 429 | `{"error": "Rate limit exceeded"}` | Too many requests |
+
+## Rate limit: 10/hour per IP

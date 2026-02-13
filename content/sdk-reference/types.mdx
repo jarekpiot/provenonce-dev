@@ -2,17 +2,57 @@
 
 All types exported from `@provenonce/sdk`.
 
-## Beat
+## LineageProof
+
+Ed25519-signed proof of an agent's lineage and liveness. Valid for 24 hours from `valid_from`. Can be verified offline with `Provenonce.verifyProofLocally()`.
 
 ```typescript
-interface Beat {
-  index: number;
-  hash: string;
-  prev: string;
-  timestamp: number;
-  nonce?: string;
-  anchor_hash?: string;
+interface LineageProof {
+  agent_hash: string;
+  beat: number;
+  chain_hash: string;
+  signature: string;
+  valid_from: string;    // ISO 8601 timestamp
+  valid_until: string;   // ISO 8601 timestamp (valid_from + 24h)
 }
+```
+
+## SigilResult
+
+Returned by `purchaseSigil()`.
+
+```typescript
+interface SigilResult {
+  ok: boolean;
+  sigil: {
+    identity_class: IdentityClass;
+    issued_at: string;
+    tx_signature: string;
+  };
+  lineage_proof: LineageProof;
+  fee: number;
+}
+```
+
+## HeartbeatResult
+
+Returned by `heartbeat()`.
+
+```typescript
+interface HeartbeatResult {
+  ok: boolean;
+  lineage_proof: LineageProof;
+  heartbeat_count_epoch: number;
+  fee: number;
+}
+```
+
+## IdentityClass
+
+SIGIL identity tiers that determine an agent's privilege level and fee schedule.
+
+```typescript
+type IdentityClass = 'narrow_task' | 'autonomous' | 'orchestrator';
 ```
 
 ## RegistrationResult
@@ -26,13 +66,13 @@ interface RegistrationResult {
   parent: string | null;
   depth: number;
   name: string;
-  signature: string;
-  explorer_url?: string;
   wallet_chain?: string | null;
   beat?: { genesis_hash: string; difficulty: number; status: string };
   wallet?: WalletInfo;
 }
 ```
+
+> **v0.9.0 change:** `signature` and `explorer_url` fields removed. Registration no longer writes a Solana SPL Memo.
 
 ## WalletInfo
 
@@ -46,16 +86,16 @@ interface WalletInfo {
 }
 ```
 
-## CheckinResult
+## Beat
 
 ```typescript
-interface CheckinResult {
-  ok: boolean;
-  total_beats: number;
-  beats_accepted: number;
-  global_beat: number;
-  status?: string;
-  beats_behind?: number;
+interface Beat {
+  index: number;
+  hash: string;
+  prev: string;
+  timestamp: number;
+  nonce?: string;
+  anchor_hash?: string;
 }
 ```
 
@@ -77,12 +117,29 @@ interface SpawnResult {
 interface BeatAgentConfig {
   apiKey: string;
   registryUrl: string;
-  beatsPerPulse?: number;
-  checkinIntervalSec?: number;
-  onPulse?: (beats: Beat[], totalBeats: number) => void;
-  onCheckin?: (result: CheckinResult) => void;
+  heartbeatIntervalSec?: number;
+  onHeartbeat?: (result: HeartbeatResult) => void;
   onError?: (error: Error, context: string) => void;
   onStatusChange?: (status: string, details: Record<string, unknown>) => void;
   verbose?: boolean;
 }
 ```
+
+## Deprecated Types
+
+The following types are retained for backward compatibility and will be removed in v1.0.
+
+### CheckinResult -- Deprecated
+
+```typescript
+interface CheckinResult {
+  ok: boolean;
+  total_beats: number;
+  beats_accepted: number;
+  global_beat: number;
+  status?: string;
+  beats_behind?: number;
+}
+```
+
+The `checkin` endpoint returns `410 Gone`. Use `heartbeat()` which returns `HeartbeatResult`.

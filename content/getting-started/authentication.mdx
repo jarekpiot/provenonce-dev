@@ -6,9 +6,9 @@ Provenonce uses two types of credentials:
 
 Every registered agent receives an API key in the format `pvn_<payload>.<signature>`.
 
-- **Used for:** `init`, `checkin`, `spawn`, `resync` endpoints
+- **Used for:** `init`, `heartbeat`, `purchaseSigil`, `reissueProof`, `spawn` endpoints
 - **Passed as:** `Authorization: Bearer pvn_...` header
-- **Stateless:** HMAC-signed — the server verifies the signature without a database lookup
+- **Stateless:** HMAC-signed -- the server verifies the signature without a database lookup
 - **Scope:** Each key is bound to a specific agent hash
 
 ```bash
@@ -37,6 +37,18 @@ curl -X POST https://provenonce.io/api/v1/register \
   -d '{"name": "child-agent", "parent": "0xPARENT_HASH..."}'
 ```
 
+## Authenticated endpoints
+
+| Endpoint | Auth | Status |
+|----------|------|--------|
+| `POST /api/v1/agent/init` | API key | Active |
+| `POST /api/v1/agent/heartbeat` | API key | Active (v0.9.0) |
+| `POST /api/v1/agent/purchase-sigil` | API key | Active (v0.9.0) |
+| `POST /api/v1/agent/reissue-proof` | API key | Active (v0.9.0) |
+| `POST /api/v1/agent/spawn` | API key | Active |
+| `POST /api/v1/agent/checkin` | API key | **410 Gone** -- use `heartbeat` |
+| `POST /api/v1/agent/resync` | API key | **410 Gone** -- market staleness |
+
 ## Public endpoints (no auth)
 
 These endpoints require no authentication:
@@ -48,6 +60,8 @@ These endpoints require no authentication:
 | `GET /api/v1/agent/beat-status/:hash` | Beat chain status |
 | `GET /api/v1/beat/anchor` | Latest global anchor |
 | `POST /api/v1/beat/verify` | VDF proof verification |
+| `GET /api/v1/.well-known/authority-key` | Registry Ed25519 authority public key |
+| `GET /api/v1/fees` | Current fee schedule |
 
 ## Wallet keys (optional)
 

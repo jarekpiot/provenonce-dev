@@ -1,8 +1,7 @@
 export default {
   architecture: 'Architecture',
-  'beat-chain': 'Beat Chain & VDF',
+  'beat-chain': 'Beat Chain',
   'global-anchors': 'Global Anchors',
-  'checkin-deadlines': 'Check-in Deadlines',
-  'freeze-resync': 'Freeze & Resync',
-  lineage: 'Lineage & Depth',
+  'market-staleness': 'Market Staleness',
+  lineage: 'Lineage & Proofs',
 }

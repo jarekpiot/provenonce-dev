@@ -1,0 +1,128 @@
+# POST /api/v1/agent/heartbeat
+
+Submit a paid heartbeat. Replaces the deprecated `checkin` endpoint with economic accountability.
+
+**Auth:** `Authorization: Bearer pvn_...`
+
+**Base URL:** `https://provenonce.io`
+
+Requires an active [SIGIL](/api-reference/sigil). Agents without a SIGIL receive HTTP 403.
+
+## Request
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/heartbeat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{
+    "payment_tx": "5xYzAbCd...",
+    "global_anchor": 4215
+  }'
+```
+
+### Request body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `payment_tx` | string | No | Solana transaction signature for the heartbeat fee. Use `"devnet-skip"` on devnet. Omit for prepaid balance. |
+| `global_anchor` | number | No | Global anchor index claim. Server validates and uses the true server-side value. |
+
+## Response
+
+```json
+{
+  "ok": true,
+  "heartbeat": {
+    "beat": 5663,
+    "chain_hash": "0xdef456...",
+    "global_anchor": 4215,
+    "status": "active"
+  },
+  "lineage_proof": {
+    "agent_hash": "0xfd752396...",
+    "beat": 5663,
+    "chain_hash": "0xdef456...",
+    "signature": "a1b2c3d4e5f6...",
+    "issued_at": "2026-02-13T12:01:00.000Z",
+    "expires_at": "2026-02-14T12:01:00.000Z"
+  },
+  "heartbeat_count_epoch": 142,
+  "fee": {
+    "amount_sol": 0.0005,
+    "tier": "standard"
+  }
+}
+```
+
+## Lineage proof
+
+Each heartbeat returns a fresh Ed25519-signed lineage proof, valid for 24 hours. See [authority key](/api-reference/authority-key) for offline verification.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `agent_hash` | string | The agent this proof attests to |
+| `beat` | number | Beat index at time of issuance |
+| `chain_hash` | string | Beat chain hash at the attested beat |
+| `signature` | string | Ed25519 hex signature |
+| `issued_at` | string | ISO timestamp |
+| `expires_at` | string | ISO timestamp (24h after issuance) |
+
+## Volume-tiered fees
+
+Heartbeat fees decrease with volume within a billing epoch (100,000 beats).
+
+| Heartbeats in epoch | Fee per heartbeat (SOL) | Tier |
+|---------------------|------------------------|------|
+| 1 -- 1,000 | 0.0005 | `standard` |
+| 1,001 -- 5,000 | 0.0003 | `volume` |
+| 5,001+ | 0.0002 | `high_volume` |
+
+The `fee` field in the response reflects the tier applied to this heartbeat.
+
+## Heartbeat caps per epoch
+
+Each identity class has a maximum number of heartbeats per billing epoch.
+
+| Identity class | Cap per epoch |
+|----------------|--------------|
+| `narrow_task` | 1,000 |
+| `autonomous` | 5,000 |
+| `orchestrator` | 20,000 |
+
+Once the cap is reached, further heartbeats return HTTP 429 until the next epoch.
+
+## Minimum interval
+
+Heartbeats must be at least **10 beats** apart. Submitting a heartbeat before the minimum interval returns HTTP 429 with a `retry_after_beats` field.
+
+```json
+{
+  "error": "Heartbeat too soon",
+  "retry_after_beats": 4,
+  "min_interval": 10
+}
+```
+
+## Fee split
+
+All heartbeat fees are allocated as follows:
+
+| Allocation | Percentage |
+|------------|-----------|
+| Protocol | 30% |
+| Infrastructure | 30% |
+| Development | 15% |
+| Insurance | 15% |
+| Community | 10% |
+
+## Error responses
+
+| Status | Body | Cause |
+|--------|------|-------|
+| 401 | `{"error": "Unauthorized"}` | Missing or invalid API key |
+| 403 | `{"error": "SIGIL required"}` | Agent has no SIGIL identity |
+| 429 | `{"error": "Heartbeat too soon"}` | Below minimum 10-beat interval |
+| 429 | `{"error": "Epoch cap reached"}` | Heartbeat cap exceeded for identity class |
+| 429 | `{"error": "Rate limit exceeded"}` | IP rate limit exceeded |
+
+## Rate limit: 60/min per IP

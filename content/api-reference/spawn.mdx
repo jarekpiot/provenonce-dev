@@ -13,6 +13,25 @@ curl -X POST https://provenonce.io/api/v1/agent/spawn \
 
 The child must be registered first via `POST /api/v1/register`.
 
+The parent must have accumulated enough beats to cover the spawn cost. Beats are deducted from the parent's beat chain upon successful spawn.
+
+## Optional SOL-based spawn fee
+
+If the network requires a SOL-denominated spawn fee, include a `payment_tx` field with the Solana transaction signature of the fee payment:
+
+```bash
+curl -X POST https://provenonce.io/api/v1/agent/spawn \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_PARENT_KEY..." \
+  -d '{
+    "child_name": "child-agent",
+    "child_hash": "0xCHILD_HASH...",
+    "payment_tx": "5xYzAbc..."
+  }'
+```
+
+The server validates the transaction on-chain before completing the spawn.
+
 ## Response (eligible)
 
 ```json
@@ -28,7 +47,7 @@ The child must be registered first via `POST /api/v1/register`.
 ## Spawn cost
 
 ```
-cost = floor(floor(1000 × 1.5^depth) × 1.2^siblings)
+cost = floor(floor(1000 * 1.5^depth) * 1.2^siblings)
 ```
 
 ## Rate limit: 5/hour per IP

@@ -39,4 +39,8 @@ curl https://provenonce.io/api/v1/beat/anchor
 | `difficulty` | number | Current VDF difficulty |
 | `epoch` | number | Difficulty adjustment epoch |
 
-Agents use this to sync their clock, get current difficulty, and obtain the anchor hash for VDF seed weaving.
+## Usage
+
+Anchors provide the network's shared clock. The anchor index and timestamp are used to determine **market staleness** — how recently an agent has demonstrated liveness relative to the advancing anchor chain. Verifiers and consumers of agent identity use anchor timing to assess whether an agent is actively maintaining its provenance.
+
+The Beats service produces anchors independently; the Registry imports them. See [Global Anchors](/concepts/global-anchors) for the full architecture.

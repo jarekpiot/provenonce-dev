@@ -1,11 +1,30 @@
 # Changelog
 
+## v0.9.0 (2026-02-13)
+
+**SIGIL identity tiers, heartbeat protocol, lineage proofs**
+
+- **Breaking:** `checkin()` removed -- server returns `410 Gone`. Use `heartbeat()` instead.
+- **Breaking:** `resync()` removed -- server returns `410 Gone`. Staleness resolved through market (re-register or purchase a new SIGIL).
+- **Breaking:** Registration no longer writes a Solana SPL Memo. `signature` and `explorer_url` removed from `RegistrationResult`. Birth records are DB-only.
+- **Deprecated:** `pulse()`, `computeBeat()`, `computeBeatsLite()` -- emit `console.warn`, will be removed in v1.0.
+- **Added:** `purchaseSigil({ identityClass, paymentTx })` -- acquire SIGIL identity tier (`narrow_task`, `autonomous`, `orchestrator`).
+- **Added:** `heartbeat({ paymentTx?, globalAnchor? })` -- single-call liveness proof replacing `pulse()` + `checkin()`.
+- **Added:** `reissueProof(paymentTx?)` -- request fresh lineage proof without advancing heartbeat counter.
+- **Added:** `getLatestProof()` -- return cached lineage proof (no network).
+- **Added:** `Provenonce.verifyProofLocally(proof, authorityPubKeyHex)` -- offline Ed25519 proof verification.
+- **Added:** Types: `LineageProof`, `SigilResult`, `HeartbeatResult`, `IdentityClass`.
+- **Added:** Ed25519-signed lineage proofs with 24h validity window.
+- **Added:** Fee summary endpoint (`GET /api/v1/fees`), authority key endpoint (`GET /api/v1/.well-known/authority-key`).
+- **Added:** `startHeartbeat()` now calls `heartbeat()` on interval (replaces old pulse+checkin loop).
+- Devnet: pass `paymentTx: 'devnet-skip'` to bypass payment.
+
 ## v0.8.0 (2026-02-12)
 
 **Chain-agnostic identity (D-62/63/64)**
 
 - **Breaking:** Default registration is now no-wallet (identity only). Pass `walletModel: 'self-custody'` to generate a Solana wallet.
-- Wallet is optional at registration — three paths: no-wallet, Solana self-custody, Ethereum BYO
+- Wallet is optional at registration -- three paths: no-wallet, Solana self-custody, Ethereum BYO
 - Chain-agnostic wallets: `walletChain` option (`'solana'` or `'ethereum'`)
 - Ethereum BYO registration via `walletAddress` + `walletSignFn` (EIP-191 `personal_sign`)
 - v2 hash formula: `sha256("root:v2:" + wallet + ":" + chain + ":" + ts + ":" + nonce)`

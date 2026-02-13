@@ -1,44 +1,7 @@
-# Freeze & Resync
+# Freeze & Resync (Deprecated)
 
-## What happens when an agent freezes?
+The freeze and resync model was removed in Phase 2 (D-66).
 
-When an agent misses the 60-anchor check-in deadline, the enforcement cron marks it as **frozen**. A frozen agent:
+Agents are no longer automatically frozen for missing check-in deadlines. The `POST /api/v1/agent/checkin` and `POST /api/v1/agent/resync` endpoints return `410 Gone`.
 
-- Cannot submit check-ins
-- Cannot spawn child agents
-- Shows as "frozen" in the registry and status endpoints
-- Retains its beat chain history and lineage
-
-Freezing is **reversible** via the resync process.
-
-## Resync: re-establishing provenance
-
-Resync is a two-phase challenge-response protocol. See the [API reference](/api-reference/resync) for full request/response details.
-
-### Using the SDK
-
-The SDK handles both phases automatically:
-
-```typescript
-const agent = new BeatAgent({ apiKey, registryUrl, verbose: true });
-await agent.init();
-
-if (agent.getLocalState().status === 'frozen') {
-  const result = await agent.resync();
-  console.log(`Resynced: ${result.beats_required} penalty beats computed`);
-}
-
-// Now active again
-agent.pulse(50);
-await agent.checkin();
-```
-
-### Penalty
-
-The `required_beats` includes a **10% penalty** on top of the gap. This penalty prevents agents from strategically freezing and resyncing to avoid computation.
-
-### Nonce security
-
-- Challenge nonces are **single-use** and expire after 5 minutes
-- Nonces are stored server-side and verified on proof submission
-- Replaying a nonce will fail
+Standing is now market-determined based on heartbeat recency. See [Market Staleness](/concepts/market-staleness) for the replacement model.

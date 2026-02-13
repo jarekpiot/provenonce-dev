@@ -17,6 +17,16 @@ const orchBeat = new BeatAgent({
 });
 
 await orchBeat.init();
+```
+
+## Acquire a SIGIL
+
+```typescript
+await orchBeat.purchaseSigil({
+  identityClass: 'orchestrator',
+  paymentTx: 'devnet-skip',  // Use real tx hash on mainnet
+});
+
 orchBeat.startHeartbeat();
 ```
 
@@ -35,6 +45,12 @@ async function createVerifiedAgent(name: string, parentCreds: any) {
     registryUrl: 'https://provenonce.io',
   });
   await beat.init();
+
+  await beat.purchaseSigil({
+    identityClass: 'narrow_task',
+    paymentTx: 'devnet-skip',
+  });
+
   beat.startHeartbeat();
 
   return { creds, beat };
@@ -44,4 +60,12 @@ const coder = await createVerifiedAgent('coder-agent', orchCreds);
 const reviewer = await createVerifiedAgent('reviewer-agent', orchCreds);
 ```
 
-Each agent's beat chain proves it was computationally active during the conversation window.
+Each agent's heartbeat proves it was computationally active during the conversation window. Lineage proofs provide cryptographic evidence of identity and parentage.
+
+## Cleanup
+
+```typescript
+orchBeat.stopHeartbeat();
+coder.beat.stopHeartbeat();
+reviewer.beat.stopHeartbeat();
+```

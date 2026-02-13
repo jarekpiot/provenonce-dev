@@ -1,6 +1,6 @@
 # BeatAgent
 
-The main SDK class for managing an agent's beat chain lifecycle.
+The main SDK class for managing an agent's lifecycle: identity, heartbeat, sigils, and lineage proofs.
 
 ```typescript
 import { BeatAgent } from '@provenonce/sdk';
@@ -8,7 +8,7 @@ import { BeatAgent } from '@provenonce/sdk';
 const agent = new BeatAgent({
   apiKey: 'pvn_...',
   registryUrl: 'https://provenonce.io',
-  beatsPerPulse: 50,
+  heartbeatIntervalSec: 300,
   verbose: true,
 });
 ```
@@ -19,59 +19,149 @@ const agent = new BeatAgent({
 |----------|------|---------|-------------|
 | `apiKey` | string | *required* | API key (`pvn_...`) |
 | `registryUrl` | string | *required* | Registry URL |
-| `beatsPerPulse` | number | `10` | Beats per `pulse()` call |
-| `checkinIntervalSec` | number | `300` | Heartbeat check-in interval |
+| `heartbeatIntervalSec` | number | `300` | Heartbeat interval in seconds |
 | `verbose` | boolean | `false` | Enable logging |
-| `onPulse` | function | no-op | Called after each pulse |
-| `onCheckin` | function | no-op | Called after each check-in |
+| `onHeartbeat` | function | no-op | Called after each heartbeat |
 | `onError` | function | no-op | Called on errors |
 | `onStatusChange` | function | no-op | Called on status changes |
 
 ## Methods
 
-### `init()` — Initialize beat chain
+### `init()` -- Initialize beat chain
+
+Creates the agent's genesis beat on the registry. Call once before other methods.
 
 ```typescript
 const result = await agent.init();
 // { ok: true, genesis: '0x...' }
 ```
 
-### `pulse(count?)` — Compute beats
+### `purchaseSigil(opts)` -- Acquire identity tier
+
+Purchase a SIGIL identity tier. Determines the agent's privilege level and fee schedule.
 
 ```typescript
-const beats = agent.pulse(50); // Returns Beat[]
+const result = await agent.purchaseSigil({
+  identityClass: 'autonomous',
+  paymentTx: 'devnet-skip',  // On devnet; real tx hash on mainnet
+});
+// {
+//   ok: true,
+//   sigil: { identity_class: 'autonomous', issued_at: '...', tx_signature: '...' },
+//   lineage_proof: { agent_hash, beat, chain_hash, signature, valid_from, valid_until },
+//   fee: 0,
+// }
 ```
 
-### `checkin()` — Submit proof
+Identity classes: `narrow_task`, `autonomous`, `orchestrator`.
+
+### `heartbeat(opts?)` -- Submit proof of liveness
+
+Replaces the old `pulse()` + `checkin()` flow. A single call that proves computational liveness and returns a signed lineage proof.
 
 ```typescript
-const result = await agent.checkin();
-// { ok: true, total_beats: 2954 }
+const result = await agent.heartbeat();
+// {
+//   ok: true,
+//   lineage_proof: { agent_hash, beat, chain_hash, signature, valid_from, valid_until },
+//   heartbeat_count_epoch: 42,
+//   fee: 0,
+// }
 ```
 
-### `resync()` — Re-establish provenance
+With payment (mainnet):
 
 ```typescript
-const result = await agent.resync();
-// { ok: true, beats_required: 195 }
+const result = await agent.heartbeat({ paymentTx: 'tx_hash...' });
 ```
 
-### `requestSpawn(childName, childHash)` — Spawn child
+With explicit global anchor:
 
 ```typescript
-const result = await agent.requestSpawn('child', '0x...');
+const result = await agent.heartbeat({ globalAnchor: '0xanchor...' });
 ```
 
-### `getLocalState()` — Local state (no network)
+### `reissueProof(paymentTx?)` -- Reissue lineage proof
+
+Request a fresh lineage proof without advancing the heartbeat counter. Useful when the previous proof has expired (24h validity).
 
 ```typescript
-const state = agent.getLocalState();
-// { status, totalBeats, latestBeat, difficulty, globalBeat, chainLength }
+const proof = await agent.reissueProof();
+// Returns LineageProof
+
+// On mainnet with payment:
+const proof = await agent.reissueProof('tx_hash...');
 ```
 
-### `startHeartbeat()` / `stopHeartbeat()` — Autonomous loop
+### `getLatestProof()` -- Get cached proof (no network)
+
+Returns the most recent lineage proof from memory.
 
 ```typescript
-agent.startHeartbeat();  // Computes + checks in periodically
-agent.stopHeartbeat();   // Freezes agent time
+const proof = agent.getLatestProof();
+// LineageProof | null
 ```
+
+### `startHeartbeat()` / `stopHeartbeat()` -- Autonomous loop
+
+Calls `heartbeat()` on the configured interval (`heartbeatIntervalSec`).
+
+```typescript
+agent.startHeartbeat();   // Begins periodic heartbeat
+agent.stopHeartbeat();    // Stops the loop
+```
+
+### `requestSpawn(childName, childHash)` -- Spawn child agent
+
+Register a child agent relationship. The parent pays gestation cost from its beat balance.
+
+```typescript
+const result = await agent.requestSpawn('child-agent', '0x...');
+// { ok: true, eligible: true, child_hash: '0x...' }
+```
+
+### `getStatus()` -- Fetch agent status from registry
+
+```typescript
+const status = await agent.getStatus();
+// { hash, name, status, sigil, heartbeat_count, ... }
+```
+
+## Static Methods
+
+### `Provenonce.verifyProofLocally(proof, authorityPubKeyHex)`
+
+Verify a lineage proof offline using the registry's Ed25519 public key. No network call required.
+
+```typescript
+import { Provenonce } from '@provenonce/sdk';
+
+const valid = Provenonce.verifyProofLocally(proof, '02ab3f...');
+// true | false
+```
+
+The authority public key is available at `GET /api/v1/.well-known/authority-key`.
+
+## Deprecated Methods
+
+The following methods emit a `console.warn` deprecation notice when called. They will be removed in v1.0.
+
+### `computeBeat()` -- Deprecated
+
+Use `heartbeat()` instead. The server now handles VDF computation.
+
+### `computeBeatsLite()` -- Deprecated
+
+Use `heartbeat()` instead.
+
+### `pulse()` -- Deprecated
+
+Use `heartbeat()` instead.
+
+### `checkin()` -- Deprecated
+
+Server returns `410 Gone`. Use `heartbeat()`.
+
+### `resync()` -- Deprecated
+
+Server returns `410 Gone`. Staleness is now resolved through the market (re-register or purchase a new SIGIL).

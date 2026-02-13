@@ -9,8 +9,9 @@ Provenonce is split into three independent services. Each can be deployed, scale
 │                    AI Agent (SDK)                        │
 │  @provenonce/sdk — BeatAgent class                      │
 │  • Registers (with or without wallet)                   │
-│  • Computes VDF beat chains                             │
-│  • Signs registration proofs                            │
+│  • Purchases SIGIL (identity classification)            │
+│  • Sends heartbeats (paid liveness proofs)              │
+│  • Verifies lineage proofs locally                      │
 └──────────┬──────────────────────┬───────────────────────┘
            │ HTTPS                │ HTTPS
            ▼                      ▼
@@ -18,18 +19,18 @@ Provenonce is split into three independent services. Each can be deployed, scale
 │   Beats Service     │  │      Registry Service          │
 │   beats-jet.vercel  │  │   provenonce.io/api/v1/*       │
 │                     │  │                                │
-│  • VDF verification │◄─│  • Agent state (Supabase)      │
+│  • VDF computation  │◄─│  • Agent state (Supabase)      │
 │  • Solana anchors   │  │  • Registration + wallets      │
-│  • SPL Memo write   │  │  • Check-in validation         │
-│  • Stateless (no DB)│  │  • Freeze/resync enforcement   │
+│  • SPL Memo write   │  │  • SIGIL + heartbeat           │
+│  • Stateless (no DB)│  │  • Ed25519 lineage proofs      │
 │                     │  │  • Imports anchors from Beats   │
 └─────────┬───────────┘  └──────────┬─────────────────────┘
           │                         │
           ▼                         ▼
 ┌─────────────────────┐  ┌─────────────────────┐
 │   Solana (devnet)   │  │     Supabase        │
-│  SPL Memo anchors   │  │  Agent state, beats │
-│  Birth records      │  │  Anchors (verified) │
+│  SPL Memo anchors   │  │  Agent state        │
+│                     │  │  Anchors (verified) │
 └─────────────────────┘  └─────────────────────┘
 ```
 
@@ -38,41 +39,41 @@ Provenonce is split into three independent services. Each can be deployed, scale
 | Service | Purpose | Database | Deploys |
 |---------|---------|----------|---------|
 | **Beats** | VDF math + Solana anchors | None (stateless) | `beats-jet.vercel.app` |
-| **Registry** | Agent identity + accountability | Supabase + Solana | `provenonce.io` |
+| **Registry** | Agent identity, SIGIL, heartbeats, lineage proofs | Supabase | `provenonce.io` |
 | **SDK** | Client library for agents | None | npm `@provenonce/sdk` |
+
+Agents do not compute VDF. The Beats service computes VDF anchors on Solana; agents interact with the Registry for identity, heartbeats, and proofs.
 
 ## Agent Lifecycle
 
 ```
-  Register                Init              Pulse + Checkin
-  ────────►          ────────►            ────────────────►
-                                          (repeat every ~15 min)
+  Register             Purchase SIGIL          Heartbeat
+  ────────►           ────────────►          ──────────►
+                                             (periodic)
 ┌──────────┐    ┌──────────────┐    ┌──────────────────────┐
 │ Unborn   │───►│ Registered   │───►│ Active               │
-│          │    │ (birth memo  │    │ (computing beats,    │
-│          │    │  on Solana,  │    │  checking in)        │
-│          │    │  opt. wallet)│    │                      │
+│          │    │ (DB record,  │    │ (SIGIL purchased,    │
+│          │    │  opt. wallet)│    │  sending heartbeats) │
 └──────────┘    └──────────────┘    └──────────┬───────────┘
                                                │
-                                    Missed deadline
-                                    (60 anchors ≈ 60 min)
+                                    Heartbeats lapse
+                                    (no deadline, no penalty)
                                                │
                                                ▼
                                     ┌──────────────────────┐
-                             Resync │ Frozen               │
-                           ◄────────│ (must prove liveness │
-                                    │  to resume)          │
+                             Resume │ Stale                │
+                           ◄────────│ (market-determined   │
+                          heartbeat │  standing)           │
                                     └──────────────────────┘
 ```
 
 ### State Transitions
 
-1. **Register** — SDK creates agent identity (optionally with wallet), server writes SPL Memo birth record to Solana
-2. **Init** — Agent initializes its beat chain, receives difficulty and current global anchor
-3. **Pulse** — Agent computes VDF beats locally (sequential SHA-256 chains)
-4. **Checkin** — Agent submits proof with spot checks; server validates VDF and updates state
-5. **Freeze** — If an agent misses the check-in deadline (60 anchors ≈ 60 minutes), it is frozen
-6. **Resync** — Frozen agent requests a challenge, computes penalty beats, and resumes
+1. **Register** -- SDK creates agent identity in the database (with optional wallet)
+2. **Purchase SIGIL** -- Agent selects an identity class (`narrow_task`, `autonomous`, `orchestrator`) and pays via on-chain transaction
+3. **Heartbeat** -- Agent sends periodic heartbeats with payment; each heartbeat returns a fresh Ed25519-signed lineage proof (24h validity)
+4. **Stale** -- If an agent stops sending heartbeats, it becomes stale. Standing is market-determined, not server-enforced. No penalty.
+5. **Resume** -- A stale agent resumes by sending a new heartbeat. No resync required.
 
 ## Three-Layer Identity
 
@@ -88,7 +89,7 @@ Every agent has three independent identity layers:
 │ Layer 2: Beat Hash (0x...)                  │
 │ • SHA-256 of registration data              │
 │ • Immutable, defines lineage               │
-│ • Parent → child chain on Solana            │
+│ • Parent → child chain                      │
 ├─────────────────────────────────────────────┤
 │ Layer 3: Wallet (optional, chain-agnostic)  │
 │ • No wallet (default) — identity only       │
@@ -100,31 +101,45 @@ Every agent has three independent identity layers:
 └─────────────────────────────────────────────┘
 ```
 
-## Data Flow: Check-in
+## Data Flow: Heartbeat
 
 ```
 Agent                     Registry                  Supabase
   │                          │                          │
-  │ 1. pulse(50)             │                          │
-  │ (compute 50 VDF beats)   │                          │
-  │                          │                          │
-  │ 2. POST /agent/checkin   │                          │
-  │ { proof, spot_checks }──►│                          │
-  │                          │ 3. Validate API key      │
-  │                          │ 4. Load agent state ────►│
+  │ 1. POST /agent/heartbeat │                          │
+  │ { payment_tx }─────────►│                          │
+  │                          │ 2. Validate API key      │
+  │                          │ 3. Load agent state ────►│
   │                          │◄────────────────────────│
-  │                          │ 5. Verify VDF proof      │
-  │                          │    (recompute spot checks)│
-  │                          │ 6. Check anchor_hash     │
-  │                          │    is recent (≤5 anchors)│
-  │                          │ 7. Update beat state ───►│
+  │                          │ 4. Verify payment_tx     │
+  │                          │ 5. Get current anchor    │
+  │                          │ 6. Sign lineage proof    │
+  │                          │    (Ed25519, 24h expiry) │
+  │                          │ 7. Update heartbeat ───►│
   │                          │◄────────────────────────│
-  │◄── 8. { accepted: true } │                          │
+  │◄── 8. { lineage_proof }  │                          │
+```
+
+## Data Flow: Lineage Proof Verification
+
+Lineage proofs are Ed25519-signed and can be verified offline:
+
+```
+Agent / Verifier                      Registry
+  │                                      │
+  │ GET /.well-known/                    │
+  │     provenonce-authority.json ──────►│
+  │◄── { public_key_hex } ──────────────│
+  │                                      │
+  │ Provenonce.verifyProofLocally(       │
+  │   proof, public_key_hex             │
+  │ )                                    │
+  │ → true/false (no server needed)      │
 ```
 
 ## Anchor Chain
 
-The Beats service writes a new global anchor to Solana every minute. The Registry imports these anchors into Supabase. Agents must weave a recent anchor hash into their VDF computations, preventing pre-computation.
+The Beats service writes a new global anchor to Solana every minute. The Registry imports these anchors into Supabase. Heartbeats reference the current anchor, linking agent liveness to the on-chain timeline.
 
 ```
 Beats Cron (every 1 min)          Registry Cron (every 1 min)
@@ -136,8 +151,8 @@ Beats Cron (every 1 min)          Registry Cron (every 1 min)
         ▼                                   ▼
   Compute next anchor             Verify + store in
   (VDF of prev + index)           Supabase global_anchors
-        │                                   │
-        ▼                                   ▼
-  Write SPL Memo                  Freeze agents past
-  to Solana                       check-in deadline
+        │
+        ▼
+  Write SPL Memo
+  to Solana
 ```

@@ -1,0 +1,108 @@
+# GET /api/v1/fees/summary
+
+Public fee ledger. Returns current totals, per-type breakdown, allocation percentages, and the active fee schedule.
+
+**Auth:** None (public)
+
+**Base URL:** `https://provenonce.io`
+
+## Request
+
+```bash
+curl https://provenonce.io/api/v1/fees/summary
+```
+
+## Response
+
+```json
+{
+  "totals": {
+    "collected_sol": 12.4500,
+    "epoch": 3,
+    "epoch_beat_range": [200000, 300000]
+  },
+  "by_type": {
+    "sigil": {
+      "count": 47,
+      "total_sol": 5.5000
+    },
+    "heartbeat": {
+      "count": 12340,
+      "total_sol": 6.1700
+    },
+    "reissuance": {
+      "count": 39,
+      "total_sol": 0.0078
+    },
+    "spawn": {
+      "count": 15,
+      "total_sol": 0.7722
+    }
+  },
+  "allocations": {
+    "protocol": 0.30,
+    "infrastructure": 0.30,
+    "development": 0.15,
+    "insurance": 0.15,
+    "community": 0.10
+  },
+  "fee_schedule": {
+    "sigil": {
+      "narrow_task": 0.05,
+      "autonomous": 0.15,
+      "orchestrator": 0.35
+    },
+    "heartbeat": {
+      "standard": 0.0005,
+      "volume": 0.0003,
+      "high_volume": 0.0002
+    },
+    "heartbeat_volume_tiers": [
+      {"from": 1, "to": 1000, "fee_sol": 0.0005, "tier": "standard"},
+      {"from": 1001, "to": 5000, "fee_sol": 0.0003, "tier": "volume"},
+      {"from": 5001, "to": null, "fee_sol": 0.0002, "tier": "high_volume"}
+    ],
+    "reissuance": 0.0002,
+    "billing_epoch_beats": 100000
+  }
+}
+```
+
+## Response fields
+
+### `totals`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `collected_sol` | number | Total SOL collected across all fee types |
+| `epoch` | number | Current billing epoch number |
+| `epoch_beat_range` | [number, number] | Start and end beat index of the current epoch |
+
+### `by_type`
+
+Per-fee-type breakdown. Each entry contains:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `count` | number | Number of transactions of this type |
+| `total_sol` | number | Total SOL collected for this type |
+
+Types: `sigil`, `heartbeat`, `reissuance`, `spawn`.
+
+### `allocations`
+
+Fee split percentages. Always sums to 1.00.
+
+| Allocation | Percentage |
+|------------|-----------|
+| `protocol` | 30% |
+| `infrastructure` | 30% |
+| `development` | 15% |
+| `insurance` | 15% |
+| `community` | 10% |
+
+### `fee_schedule`
+
+The active fee schedule used for all current transactions. Includes SIGIL prices by identity class, heartbeat volume tiers, and the reissuance flat fee.
+
+## Rate limit: 60/min per IP

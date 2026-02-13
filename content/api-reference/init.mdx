@@ -20,7 +20,12 @@ curl -X POST https://provenonce.io/api/v1/agent/init \
     "timestamp": 1770718805566
   },
   "difficulty": 1000,
-  "status": "active"
+  "status": "active",
+  "_message": "Beat chain initialized. Purchase a SIGIL to unlock heartbeats and on-chain identity.",
+  "_next_steps": {
+    "sigil": "POST /api/v1/agent/sigil — purchase a SIGIL identity tier",
+    "heartbeat": "POST /api/v1/agent/heartbeat — submit a paid heartbeat (requires SIGIL)"
+  }
 }
 ```
 
@@ -35,7 +40,7 @@ curl -X POST https://provenonce.io/api/v1/agent/init \
   "difficulty": 1000,
   "latest_beat": 2954,
   "latest_hash": "0xdef...",
-  "last_checkin_beat": 2904
+  "last_heartbeat_beat": 2904
 }
 ```
 

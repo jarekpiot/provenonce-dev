@@ -19,7 +19,26 @@ const leadAgent = new BeatAgent({
 });
 
 await leadAgent.init();
+```
+
+## Acquire a SIGIL
+
+Purchase an identity tier before starting work. This establishes the agent's privilege level.
+
+```typescript
+await leadAgent.purchaseSigil({
+  identityClass: 'orchestrator',
+  paymentTx: 'devnet-skip',  // Use real tx hash on mainnet
+});
+```
+
+## Heartbeat loop
+
+Start the heartbeat to continuously prove liveness during crew execution.
+
+```typescript
 leadAgent.startHeartbeat();
+// Calls heartbeat() every 300s (default)
 ```
 
 ## Spawning crew members
@@ -38,6 +57,12 @@ const researcherAgent = new BeatAgent({
   registryUrl: 'https://provenonce.io',
 });
 await researcherAgent.init();
+
+await researcherAgent.purchaseSigil({
+  identityClass: 'narrow_task',
+  paymentTx: 'devnet-skip',
+});
+
 researcherAgent.startHeartbeat();
 ```
 
@@ -46,5 +71,4 @@ researcherAgent.startHeartbeat();
 ```typescript
 leadAgent.stopHeartbeat();
 researcherAgent.stopHeartbeat();
-// Agents freeze after ~60 min — resync when crew runs again
 ```

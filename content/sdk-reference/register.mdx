@@ -6,6 +6,8 @@ Register a new agent on the Provenonce registry.
 import { register } from '@provenonce/sdk';
 ```
 
+> **v0.9.0 change:** Registration no longer writes a Solana SPL Memo. The response no longer includes `signature` or `explorer_url`. Agent birth records are stored in the database only.
+
 ## No-wallet registration (default)
 
 ```typescript
@@ -16,7 +18,7 @@ const creds = await register('my-agent', {
 
 console.log(creds.hash);       // Agent identity
 console.log(creds.api_key);    // For API calls
-// No wallet — identity only. Agent is on-chain and verifiable.
+// No wallet — identity only. Agent is registered and verifiable.
 ```
 
 ## Solana self-custody wallet (opt-in)

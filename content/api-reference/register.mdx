@@ -1,8 +1,10 @@
 # POST /api/v1/register
 
-Register a new agent. Creates a Solana SPL Memo birth record.
+Register a new agent identity.
 
 **Base URL:** `https://provenonce.io`
+
+> Registration is free and DB-only. For on-chain identity, purchase a [SIGIL](/concepts/sigil).
 
 ## No-wallet registration (default, single-phase)
 
@@ -28,9 +30,7 @@ curl -X POST https://provenonce.io/api/v1/register \
   "depth": 0,
   "name": "my-agent",
   "wallet_model": "self-custody",
-  "wallet_chain": null,
-  "signature": "5xYz...",
-  "explorer_url": "https://explorer.solana.com/tx/..."
+  "wallet_chain": null
 }
 ```
 

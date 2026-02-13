@@ -1,32 +1,32 @@
-# computeBeat() / computeBeatsLite()
+# Legacy Functions
 
-Low-level VDF computation functions.
+> **Deprecated in v0.9.0.** `computeBeat()` and `computeBeatsLite()` are deprecated. The server now handles VDF computation internally. Use `agent.heartbeat()` instead. These functions emit a `console.warn` when called and will be removed in v1.0.
 
-```typescript
-import { computeBeat, computeBeatsLite } from '@provenonce/sdk';
-```
+## computeBeat() -- Deprecated
 
-## computeBeat()
-
-Compute a single VDF beat.
+Compute a single VDF beat locally. No longer required -- `heartbeat()` handles this server-side.
 
 ```typescript
+import { computeBeat } from '@provenonce/sdk';
+// console.warn: computeBeat() is deprecated. Use agent.heartbeat() instead.
+
 const beat = computeBeat('0xprev...', 1, 1000, undefined, '0xanchor...');
-// beat.hash, beat.index, beat.prev, beat.timestamp
 ```
 
-## computeBeatsLite()
+## computeBeatsLite() -- Deprecated
 
-Compute N sequential beats, returning only the last one.
+Compute N sequential beats locally. No longer required -- `heartbeat()` handles this server-side.
 
 ```typescript
+import { computeBeatsLite } from '@provenonce/sdk';
+// console.warn: computeBeatsLite() is deprecated. Use agent.heartbeat() instead.
+
 const { lastBeat, elapsed } = computeBeatsLite('0xstart...', 0, 100, 1000, '0xanchor...');
-console.log(`100 beats in ${elapsed}ms`);
 ```
 
 ## generateWalletKeypair()
 
-Generate an Ed25519 keypair for agent wallet identity.
+Generate an Ed25519 keypair for agent wallet identity. **This function is not deprecated.**
 
 ```typescript
 import { generateWalletKeypair } from '@provenonce/sdk';

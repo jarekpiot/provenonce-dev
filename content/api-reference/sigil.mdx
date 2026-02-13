@@ -1,0 +1,124 @@
+# POST /api/v1/sigil
+
+Purchase a SIGIL identity. SIGILs assign an identity class to a registered agent, gating heartbeat caps and fee tiers.
+
+**Auth:** `Authorization: Bearer pvn_...`
+
+**Base URL:** `https://provenonce.io`
+
+## Request
+
+```bash
+curl -X POST https://provenonce.io/api/v1/sigil \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{
+    "identity_class": "narrow_task",
+    "payment_tx": "5xYzAbCd..."
+  }'
+```
+
+### Request body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `identity_class` | string | Yes | One of `narrow_task`, `autonomous`, `orchestrator` |
+| `payment_tx` | string | Yes | Solana transaction signature for the SIGIL fee payment. Use `"devnet-skip"` on devnet to bypass payment verification. |
+
+## Response
+
+```json
+{
+  "ok": true,
+  "sigil": {
+    "identity_class": "narrow_task",
+    "agent_hash": "0xfd752396...",
+    "purchased_at": "2026-02-13T12:00:00.000Z",
+    "payment_tx": "5xYzAbCd...",
+    "fee_sol": 0.05
+  },
+  "lineage_proof": {
+    "agent_hash": "0xfd752396...",
+    "beat": 5613,
+    "chain_hash": "0xabc123...",
+    "signature": "a1b2c3d4e5f6...",
+    "issued_at": "2026-02-13T12:00:00.000Z",
+    "expires_at": "2026-02-14T12:00:00.000Z"
+  }
+}
+```
+
+## SIGIL tiers
+
+| Identity class | Fee (SOL) | Heartbeat cap / epoch | Description |
+|----------------|-----------|----------------------|-------------|
+| `narrow_task` | 0.05 | 1,000 | Single-purpose agents |
+| `autonomous` | 0.15 | 5,000 | Self-directed agents |
+| `orchestrator` | 0.35 | 20,000 | Multi-agent coordinators |
+
+One billing epoch = 100,000 beats.
+
+## Lineage proof
+
+Every SIGIL purchase returns a signed lineage proof. Proofs are Ed25519-signed by the Provenonce authority key and valid for 24 hours.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `agent_hash` | string | The agent this proof attests to |
+| `beat` | number | Beat index at time of issuance |
+| `chain_hash` | string | Beat chain hash at the attested beat |
+| `signature` | string | Ed25519 hex signature |
+| `issued_at` | string | ISO timestamp |
+| `expires_at` | string | ISO timestamp (24h after issuance) |
+
+Verify proofs offline using the [authority public key](/api-reference/authority-key).
+
+## Examples by tier
+
+### Narrow task
+
+```bash
+curl -X POST https://provenonce.io/api/v1/sigil \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{"identity_class": "narrow_task", "payment_tx": "5xYz..."}'
+```
+
+### Autonomous
+
+```bash
+curl -X POST https://provenonce.io/api/v1/sigil \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{"identity_class": "autonomous", "payment_tx": "7aBc..."}'
+```
+
+### Orchestrator
+
+```bash
+curl -X POST https://provenonce.io/api/v1/sigil \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{"identity_class": "orchestrator", "payment_tx": "9dEf..."}'
+```
+
+### Devnet (skip payment)
+
+```bash
+curl -X POST https://provenonce.io/api/v1/sigil \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pvn_..." \
+  -d '{"identity_class": "autonomous", "payment_tx": "devnet-skip"}'
+```
+
+## Error responses
+
+| Status | Body | Cause |
+|--------|------|-------|
+| 400 | `{"error": "Invalid identity_class"}` | Not one of the three valid classes |
+| 400 | `{"error": "Payment verification failed"}` | Transaction not found or amount mismatch |
+| 401 | `{"error": "Unauthorized"}` | Missing or invalid API key |
+| 409 | `{"error": "Agent already has a SIGIL"}` | SIGIL already purchased for this agent |
+| 429 | `{"error": "Rate limit exceeded"}` | Too many requests |
+
+## Rate limit: 5/hour per IP

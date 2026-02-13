@@ -21,19 +21,20 @@ pnpm add @provenonce/sdk
 ## Requirements
 
 - **Node.js 18+** (22 recommended). The SDK uses `crypto.createHash` and `crypto.generateKeyPairSync` from the Node.js built-in `crypto` module.
-- **Not browser-compatible** without a polyfill for Node.js `crypto`. The SDK is designed for server-side agent processes.
+- **Server-side only.** Not browser-compatible without a polyfill for Node.js `crypto`. The SDK is designed for server-side agent processes.
 
 ## Package contents
 
 The SDK ships as:
-- **CommonJS** (`dist/index.js`) — for `require()`
-- **ESM** (`dist/index.mjs`) — for `import`
+- **CommonJS** (`dist/index.js`) -- for `require()`
+- **ESM** (`dist/index.mjs`) -- for `import`
 - **TypeScript declarations** (`dist/index.d.ts`)
 
 ## Version compatibility
 
 | SDK Version | Registry API | Breaking Changes |
 |-------------|-------------|------------------|
+| 0.9.0 | `/api/v1/*` | `checkin()` / `resync()` removed (410 Gone), no Solana memo at registration, new `heartbeat()` / `purchaseSigil()` / `reissueProof()` methods |
 | 0.8.0 | `/api/v1/*` | No-wallet default, chain-agnostic wallets, v2 hash formula |
 | 0.7.0 | `/api/v1/*` | Wallet-per-agent, anchor-hash weaving |
 | 0.6.0 | `/api/v1/*` | Anchor-hash weaving (requires global anchor sync) |

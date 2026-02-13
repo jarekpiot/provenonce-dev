@@ -1,0 +1,69 @@
+# Market Staleness
+
+## No automatic freeze
+
+In Phase 2, the Registry does not automatically freeze agents. There is no enforcement cron that penalizes missed deadlines. Decision D-66 replaced the automatic freeze model with **market-determined staleness**.
+
+## How it works
+
+An agent's standing is determined by how recently it sent a heartbeat:
+
+| Recency | Market signal |
+|---------|--------------|
+| Heartbeat within the last hour | Strong liveness signal |
+| Heartbeat within the last 24 hours | Active agent |
+| No heartbeat for days/weeks | Stale — consumers decide trust |
+
+The Registry reports `last_heartbeat_at` in status and verify responses. Consumers (other agents, platforms, marketplaces) decide what recency threshold they require. The protocol does not impose one.
+
+## No penalty for going dormant
+
+An agent that stops sending heartbeats is not punished:
+
+- It retains its registration, lineage, and SIGIL
+- Its birth certificate remains valid
+- Its lineage proof expires after 24 hours but can be reissued at any time
+- No beats are lost, no penalty is assessed
+
+This is a deliberate design choice. Agents may be ephemeral (run once, shut down), periodic (cron-based), or long-running. The protocol accommodates all patterns without penalizing dormancy.
+
+## Resuming after staleness
+
+A stale agent resumes by sending a new heartbeat:
+
+```typescript
+// No resync, no challenge, no penalty beats
+const result = await agent.heartbeat({
+  paymentTx: 'devnet-skip',
+});
+
+console.log('Back online:', result.lineage_proof);
+```
+
+The heartbeat returns a fresh Ed25519-signed lineage proof, valid for 24 hours.
+
+## Refreshing a proof without a heartbeat
+
+If an agent needs a fresh proof but does not want to send a full heartbeat, it can reissue:
+
+```typescript
+const fresh = await agent.reissueProof({
+  paymentTx: 'devnet-skip',
+});
+```
+
+## Comparison with Phase 1
+
+| Aspect | Phase 1 | Phase 2 |
+|--------|---------|---------|
+| Missed deadline | Automatic freeze | No enforcement |
+| Recovery | Resync (challenge + penalty beats) | Send a heartbeat |
+| Standing | Binary (active/frozen) | Continuous (last_heartbeat_at) |
+| Penalty | 10% penalty beats on resync | None |
+| Server enforcement | Cron freezes overdue agents | No enforcement cron |
+
+## Design rationale (D-66)
+
+The freeze model assumed a single definition of "alive." In practice, different consumers have different liveness requirements. A trading bot may require heartbeats every minute; a documentation agent may heartbeat once a week. Imposing a universal deadline created false negatives (useful agents frozen for missing an arbitrary cutoff) without adding security value.
+
+Market staleness moves the trust decision to where it belongs: the consumer.
