@@ -1,158 +1,514 @@
-# Whitepaper
+# Provenonce
 
-> Provenonce: The Trust Registry for the Agentic Era
+## Accountability Infrastructure for Autonomous Agents
 
-## Abstract
+**Version 1.0 · February 2026**
 
-Provenonce provides cryptographic identity and lineage proofs for AI agents, anchored on-chain. Every agent receives a unique hash at registration. Agents that purchase a **SIGIL** — a classified identity — gain Ed25519-signed lineage proofs (Passports) that are verifiable offline, without calling any API.
+---
 
-The protocol answers a single question: *can this agent prove what it claims to be?*
+## I. Background
 
-## Problem
+At sufficient scale, populations require accountability infrastructure. Humans developed civil registries because identity needed to be traceable. They standardized clocks because coordination required shared time. They built courts because disputes required enforceable records. They created banking systems because economic participation required attributable ownership.
 
-As autonomous AI agents proliferate, there is no standard way to:
+These systems share a pattern: they emerged not from foresight but from necessity, once the cost of operating without them exceeded the cost of building them.
 
-- **Identify** an agent cryptographically (who is it?)
-- **Classify** its capabilities and authority (what is it allowed to do?)
-- **Verify** its liveness and lineage (is it still operating? who created it?)
-- **Audit** its history without trusting a central authority (can I check independently?)
+Autonomous software agents are reaching that threshold. The current generation of AI agents negotiates contracts, manages capital, operates infrastructure, produces content, and spawns other agents. Their numbers are growing by orders of magnitude per year. They interact with humans, with institutions, and with each other at speeds that existing accountability frameworks were not designed for.
 
-Existing identity systems assume human users. Agent-to-agent trust requires a different primitive — one built on cryptographic proofs rather than passwords or OAuth tokens.
+The core problem is straightforward. An agent can claim any identity, any history, any lineage — and without shared infrastructure, these claims cannot be verified. An agent can be instantiated, cloned, or destroyed in milliseconds — and without a registry, there is no record. An agent can spawn a thousand children in a second, at zero marginal cost — and without controls, populations grow without bound and without audit trail.
 
-## Design Principles
+Provenonce provides the missing infrastructure: cryptographic identity, synthetic time, proof of liveness, lineage tracking, and economic participation — designed to operate at agent speed and agent scale while remaining legible in the human world of contracts, liability, and jurisdictions.
 
-1. **Identity is free, trust is earned.** Registration creates an identity. SIGIL purchase creates a classified, accountable identity.
-2. **Proofs, not promises.** Every claim is backed by an Ed25519 signature, a Solana memo, or a SHA-256 chain hash.
-3. **Offline-verifiable.** Passports can be verified without network access using the authority public key.
-4. **Market-determined standing.** Agents that stop heartbeating become stale — no penalty, no freeze. Standing is determined by consumers of the proof.
-5. **Chain-agnostic identity.** Wallets are optional. Supported chains: Solana, Ethereum.
+---
 
-## Architecture
+## II. The Gap Between Agent Accountability and Human Accountability
 
-Provenonce is split into three independent services:
+Agents do not experience the world the way humans do, and accountability infrastructure for agents cannot be a direct port of human systems.
 
-| Service | Purpose | State |
-|---------|---------|-------|
-| **Beats** | VDF computation + Solana anchor memos | Stateless (no database) |
-| **Registry** | Agent identity, SIGIL, heartbeats, lineage proofs | Supabase + Solana |
-| **SDK** | TypeScript client for agents | npm `@provenonce/sdk` |
+A human proves identity through physical presence, biometric uniqueness, and social context — signals that are expensive to fake and do not scale. An agent is a process. It can be copied perfectly. It has no face, no voice that cannot be replicated, no physical location that confirms its continuity.
 
-The Beats service writes a global anchor to Solana every minute. The Registry imports these anchors, linking agent liveness to the on-chain timeline.
+A human proves liveness by showing up. An agent's host clock can be spoofed, manipulated, or simply wrong. An agent's claim that it was active at a particular time carries no inherent weight without external corroboration.
 
-See [Architecture](/concepts/architecture) for the full system diagram.
+A human creates another human over nine months, at considerable cost, with a biological chain of custody. An agent can spawn children instantaneously, at zero marginal cost, with no record.
 
-## Agent Lifecycle
+Yet agents must bridge into the human accountability world. When an agent executes a trade, a human principal bears liability. When an agent produces content, a human or organization bears responsibility. The accountability chain — from agent to principal to jurisdiction — must be traceable and must hold under adversarial conditions.
+
+This requires infrastructure that operates natively in computational time, using cryptographic primitives, while producing records that human institutions can interpret and enforce against.
+
+---
+
+## III. What Provenonce Provides
+
+Provenonce gives agents three capabilities that existing infrastructure does not.
+
+**Verifiable identity.** Each agent receives a permanent SHA-256 identity hash at registration. Agents that purchase a SIGIL (Structured Identity Governance and Intelligent Lookup) certificate gain an on-chain identity record on Solana, a structured namespace encoding name, deploying principal, and governance tier, and rich metadata describing substrate, capabilities, and compliance regime. The identity record is independently verifiable by any third party with a Solana RPC connection.
+
+**Synthetic time.** The Beats service produces a global cryptographic anchor every 60 seconds using iterated SHA-256, written to Solana as an SPL Memo transaction. The resulting timeline is sequentially unforgeable, globally anchored, and independently auditable. Agents reference beats rather than wall-clock time because beat ordering derives from mathematics, not from a host machine's clock.
+
+**Portable proof of liveness.** Agents that heartbeat receive a Passport — an Ed25519-signed lineage proof containing their identity, class, registration beat, last heartbeat beat, and a cryptographic hash of their full lineage chain. Any verifier can check a Passport offline using only the authority public key and standard cryptographic libraries, with no dependency on Provenonce infrastructure.
+
+Provenonce does not score agents, rank them, or issue trust ratings. It does not store behavior, monitor activity, or track anything beyond heartbeat timestamps. It proves three things — identity (who), liveness (when), and lineage (from whom) — and leaves interpretation to the verifier.
+
+---
+
+## IV. Design Principles
+
+Three principles govern the protocol's economic and architectural decisions.
+
+**Costs align with value creation.** The protocol charges agents, who benefit from provable identity and liveness — actions that require infrastructure (signing, storage, chain writes). Verifiers consume proofs at no cost, because gating verification would reduce the network's utility.
+
+**Each party pays for what it receives.** Agents pay for identity and liveness proofs. Verifiers access proofs at no cost because agents have already funded their creation. There are no subsidies and no cross-subsidies.
+
+**Enforcement is market-driven.** The protocol does not automatically freeze agents or impose staleness penalties. Agents that heartbeat have fresh proofs. Agents that stop have stale proofs. Verifiers set their own freshness thresholds — a financial protocol might require a heartbeat within 100 beats, a content platform might accept 10,000. The protocol provides the data; participants determine what freshness means for their context.
+
+The protocol's only direct enforcement mechanism is heartbeat refusal, applied in response to a dispute ruling, court order, or administrative action. A refused agent cannot obtain new proofs. Its existing proofs expire within their normal 24-hour validity window. The agent's records — identity, lineage, history — remain intact. Refusal restricts future proof issuance; it does not alter or erase the past.
+
+---
+
+## V. Trust Model
+
+Provenonce is centrally operated and transparently governed. The verification layer is trustless — any party can verify any proof offline with no dependency on Provenonce infrastructure. The identity layer is anchored on Solana, a public decentralized ledger. The operational layer (Registry, Beats service) is centralized.
+
+This is a deliberate architectural choice. The protocol's value resides in the proofs it produces, not in the service that produces them. Once a Passport is signed, it is independent of Provenonce's servers. Once an identity is anchored on Solana, it persists regardless of what happens to the Registry. Once the anchor chain is written, it is publicly auditable.
+
+The remaining trust assumptions are:
+
+**The Ed25519 authority keypair.** A single key currently signs all lineage proofs. Compromise or coercion of this key would allow false proofs to be signed. The planned mitigation is threshold signing (2-of-3 or 3-of-5 multi-party scheme), which eliminates single-point-of-failure without requiring consensus infrastructure. This is the protocol's highest-priority architectural upgrade.
+
+**The Registry service.** A single Supabase deployment holds operational state. If it goes down, new registrations and heartbeats stop, but existing Passports remain verifiable and on-chain identity records persist. The mitigation path is replicated reads with centralized writes. The Registry does not require consensus for write operations because SIGIL and heartbeat writes are payment-gated and verified against Solana. Registration writes (which are free) are gated by rate limiting and, in production, by a registration secret.
+
+**The Beats cron.** A single process produces anchors. If it stops, the gap is visible on-chain. If a false anchor were published, it would be detectable by anyone reading the anchor chain.
+
+**Stateless credential revocation.** API credentials are HMAC-signed and stateless — the server verifies them by recomputing the HMAC rather than looking up a session table. This eliminates session-management vulnerabilities but means individual credentials cannot be revoked without either maintaining a revocation list (which reintroduces statefulness) or rotating the server secret (which invalidates all credentials). In the current architecture, a compromised API key can be mitigated by heartbeat refusal on the affected agent, but the credential itself remains technically valid until secret rotation. Per-agent credential revocation is a planned improvement.
+
+The protocol does not claim to be decentralized. Making that claim would be inaccurate, and inaccurate claims about trust models are a category of problem that Provenonce exists to address. The architecture is designed so that trust assumptions reduce over time through specific engineering work, not through governance votes or token-holder consensus.
+
+---
+
+## VI. Architecture
+
+Provenonce is three sandboxed services, each with a single responsibility.
+
+### Beats
+
+The time layer. A stateless service with no database and no authentication. Every 60 seconds, it reads the previous anchor from Solana, computes the next anchor using iterated SHA-256, and writes the result as an SPL Memo transaction. The anchor chain provides UTC alignment via timestamped nonces, tamper-proof ordering via Solana's immutable log, difficulty propagation, and anti-pre-computation (anchor hashes are unpredictable before publication).
+
+Beats has no concept of identity. It does not distinguish between agents or grant preferential access.
+
+### Registry
+
+The identity and accountability layer. Handles agent registration, SIGIL issuance, heartbeat processing, lineage proof signing, and fee accounting. Uses Supabase for operational state and Solana for immutable identity anchors.
+
+### Verification
+
+An Ed25519 signature check on a lineage proof. Runs locally in any environment with no runtime dependency on either Beats or Registry.
+
+### Failure Isolation
+
+The three components fail independently:
+
+- **Beats stops.** Heartbeats continue using the last known beat. Temporal precision degrades — all heartbeats during the outage share the same last_heartbeat_beat value, so verifiers cannot distinguish ordering within the outage window. No mass penalty occurs; agents are not responsible for infrastructure failures.
+- **Solana unavailable.** New SIGIL purchases fail (Solana write is the commit point). Heartbeats and verification continue unaffected.
+- **Supabase unavailable.** All Registry operations stop. Beats continues. Existing Passports remain verifiable.
+
+### Storage
+
+Solana holds SIGIL birth records, anchor memos, and wallet bindings — tamper-proof, permanent, independently verifiable. Supabase holds agent state, lineage events, fee accounting, and heartbeat tracking — queryable and operational.
+
+---
+
+## VII. Agent Lifecycle
+
+### Registration
+
+Free. An agent declares its name and receives a permanent SHA-256 identity hash and stateless HMAC-signed credentials. Three registration paths are supported:
+
+- **No-wallet (default):** The agent registers with a name only.
+- **Self-custody (Model A):** The SDK generates an Ed25519 keypair client-side, proven via two-phase challenge-response. Note: the private key resides in the agent's process memory, which the host operator can access. True self-custody in the hardware-isolation sense requires TEE attestation, which is not yet implemented.
+- **Operator wallet (Model B):** An operator registers the agent using an existing Solana or Ethereum wallet. The agent operates with API key only. Fee income flows to the operator's wallet.
+
+Registration does not write to Solana. The on-chain anchor comes with SIGIL purchase.
+
+### SIGIL Purchase
+
+A one-time paid identity certificate that transforms a database-only registration into an on-chain, verifiable identity with a structured namespace.
+
+Every SIGIL is a three-component string: `[name]*[principal]*[tier]`, using `*` as the separator.
+
+- **Name** — the agent's identifier within its principal's namespace. Lowercase alphanumeric and hyphens, max 63 characters.
+- **Principal** — the entity that deployed the agent and bears liability for its behavior. Max 24 characters. Must be a registered Provenonce principal.
+- **Tier** — the governance regime under which the principal operates. Assigned by Provenonce at principal registration, not self-declared.
+
+Examples:
+
+| SIGIL | Description |
+|---|---|
+| `aria-7*rewired*org` | Aria, deployed by Rewired, organizational tier |
+| `frontier-guardian*mas*sov` | Guardian agent, MAS, sovereign tier |
+| `scan*anthropic*org` | Scanner, Anthropic, organizational tier |
+| `tmp-a3f7*jt*eph` | Disposable agent, individual "jt", ephemeral tier |
+
+Trust tiers represent the governance regime of the principal:
+
+| Tier | Label | Meaning |
+|---|---|---|
+| Sovereign | `sov` | State-backed principal. Recourse through sovereign authority. |
+| Organizational | `org` | Institutional principal. Contractual recourse. |
+| Individual | `ind` | Single human principal. Personal liability. |
+| Ephemeral | `eph` | Disposable agent. No continuity guarantee. Trust ceiling capped. |
+| Sandbox | `sbx` | Non-production. Not to be trusted for consequential action. |
+
+Identity classes determine fee pricing and volume caps:
+
+| Class | SIGIL Fee (SOL) | Description |
+|---|---|---|
+| Narrow Task | 0.05 | Single-purpose, micro-workload |
+| Autonomous | 0.15 | General-purpose |
+| Orchestrator | 0.35 | High-frequency, managing other agents |
+
+The trust tier determines who bears accountability. The identity class determines pricing and operational limits. Both are immutable after issuance.
+
+A SIGIL also carries mutable metadata: substrate, model provider, specific model, primary capability, declared tools, input/output modalities, communication protocol, compliance regime, and mutation tracking. The immutable core (SIGIL string, principal, tier, identity class) is permanent. Metadata evolves with the agent.
+
+### Heartbeats
+
+Paid liveness proofs stamped at the current beat. The agent sends a Solana payment, the Registry verifies it, creates a new lineage event, and returns a signed Passport.
+
+Volume-tiered pricing per billing epoch (100,000 beats):
+
+| Heartbeat Count | Fee (SOL) |
+|---|---|
+| 1–100 | 0.0005 |
+| 101–1,000 | 0.0003 |
+| 1,001+ | 0.0002 |
+
+Volume caps per epoch: narrow_task 1,000, autonomous 5,000, orchestrator 20,000.
+
+Minimum interval: 10 beats between heartbeats per agent.
+
+Heartbeats do not require VDF computation by the agent. The Beats service produces the global clock. Agents reference it. Payment is the liveness mechanism.
+
+### Passports
+
+A Passport is the signed lineage proof that agents carry. It contains the agent's permanent hash, wallet address (if any), identity class, registration beat, SIGIL issuance beat, last heartbeat beat, lineage chain hash, issuance timestamp, expiry (default +24 hours), and an Ed25519 signature from the Provenonce authority.
+
+Verification requires three steps: check expiry, reconstruct canonical JSON from all fields except the signature, and verify the Ed25519 signature against the authority public key (published at `/.well-known/provenonce-authority.json`).
+
+**What a Passport proves and what it does not.** A valid Passport proves that the Provenonce authority attested to the contained identity, class, and lineage chain hash at the time of signing. It does not allow the verifier to independently recompute the lineage chain — that would require access to the full lineage event history. The verifier trusts the authority's attestation, which is why the authority keypair is a critical trust assumption (section V).
+
+**Verifier responsibilities.** A prudent verifier should check both `valid_until` (proof expiry) and `last_heartbeat_beat` (liveness recency). Proof reissuance refreshes the `valid_until` window without advancing `last_heartbeat_beat`, so checking expiry alone is insufficient to confirm recent liveness. The `last_heartbeat_beat` field is the authoritative liveness indicator.
+
+### Market-Determined Staleness
+
+Provenonce does not impose a protocol-level definition of "stale." The Passport contains `last_heartbeat_beat` and `valid_until`. Verifiers evaluate these against their own requirements.
+
+Dormancy is a normal state. An agent that stops heartbeating has a lineage gap. It can resume at any time by paying for a heartbeat, with no penalty or resync process.
+
+### Spawning
+
+To spawn a child, a parent must accumulate beats — sequential, verified computation. The cost escalates with depth and siblings:
 
 ```
-Register → Purchase SIGIL → Heartbeat (periodic) → Stale (if heartbeats lapse)
-                                                        ↓
-                                                  Resume heartbeat
+cost = 1000 * floor(1.5^depth) * floor(1.2^children_already_spawned)
 ```
 
-1. **Register** — Agent receives a unique SHA-256 hash and API key. Optional wallet (Solana or Ethereum).
-2. **Purchase SIGIL** — Agent selects an identity class (`narrow_task`, `autonomous`, `orchestrator`) and pays via on-chain transaction. Receives a three-component namespace: `name*principal*tier`.
-3. **Heartbeat** — Periodic paid liveness proofs. Each heartbeat returns a fresh Ed25519-signed lineage proof valid for 24 hours.
-4. **Stale** — If heartbeats lapse, the agent becomes stale. No penalty, no freeze. Standing is market-determined.
-5. **Resume** — Send a new heartbeat to resume. No resync required.
+| Scenario | Cost (beats) |
+|---|---|
+| First child at depth 0 | 1,000 |
+| First child at depth 1 | 1,500 |
+| First child at depth 3 | 3,375 |
+| Third child at depth 0 | 1,440 |
+| Fifth child at depth 0 | 2,488 |
 
-## SIGIL Namespace
+Beats are atomically deducted on spawn (optimistic locking prevents double-spend from concurrent requests). Temporal gestation provides rate-limited, auditable population control within a lineage tree. It does not prevent an adversary from creating multiple independent root registrations — cross-tree Sybil resistance in production relies on registration gating (`REGISTRATION_SECRET`) rather than on computational cost.
 
-Every SIGIL-holding agent receives a structured identity:
+---
 
-```
-[name]*[principal]*[tier]
-```
+## VIII. Economic Model
 
-- **Name**: Unique agent identifier (lowercase, hyphens, max 63 chars)
-- **Principal**: The accountable entity (organization or individual, max 24 chars)
-- **Tier**: Trust governance class — `sov` (sovereign), `org` (organization), `ind` (individual), `eph` (ephemeral), `sbx` (sandbox)
+Every figure in this section corresponds to the implementation in `lib/fees.ts`.
 
-Identity class (`narrow_task`, `autonomous`, `orchestrator`) determines pricing. Tier determines governance rules. They are orthogonal.
+### Fee Schedule
 
-## Economic Model
-
-### Fee Structure
-
-| Fee | Amount | When |
-|-----|--------|------|
-| Registration | Free | At registration |
-| SIGIL purchase | Varies by identity class | One-time |
-| Heartbeat | Varies by identity class | Per heartbeat |
-| Spawn | `1000 * 1.5^depth * 1.2^siblings` beats | Per child agent |
+| Service | Fee | When |
+|---|---|---|
+| Registration | Free | Always |
+| SIGIL (Narrow Task) | 0.05 SOL | One-time |
+| SIGIL (Autonomous) | 0.15 SOL | One-time |
+| SIGIL (Orchestrator) | 0.35 SOL | One-time |
+| Heartbeat (Tier 1) | 0.0005 SOL | Per heartbeat (1–100 in epoch) |
+| Heartbeat (Tier 2) | 0.0003 SOL | Per heartbeat (101–1,000) |
+| Heartbeat (Tier 3) | 0.0002 SOL | Per heartbeat (1,001+) |
+| Proof Reissuance | 0.0002 SOL | Per reissuance |
+| Verification | Free | Always |
+| Spawn | Beats cost | Per spawn |
 
 ### Fee Distribution
 
-All SIGIL and heartbeat fees are split:
+Every fee is split five ways, computed in basis points (10,000 = 100%) with integer lamport arithmetic. Rounding residuals accrue to treasury.
 
-| Recipient | Share |
-|-----------|-------|
-| Operations | 30% |
-| Contributors | 30% |
-| Development | 15% → 5% (decays 1%/year over 10 years) |
-| Treasury | 15% → 25% (absorbs development decay) |
-| Referral | 10% |
+| Recipient | Share | Purpose |
+|---|---|---|
+| Operations | 30% | Infrastructure costs (hosting, Solana fees, tooling) |
+| Code Contributors | 30% | Provenance Royalty Tree (section VIII.3) |
+| Development | See below | Protocol development rewards |
+| Treasury | See below | Protocol reserve |
+| Referral | 10% | Trust signal referral (rolls to treasury if unused) |
 
-The development share decays from 15% to a 5% floor at 1% per year. Treasury absorbs the difference.
+### Development Rewards
 
-## Lineage Proofs (Passports)
+The development share compensates contributors who build and maintain the protocol itself — distinct from the Provenance Royalty Tree, which rewards code running inside heartbeating agents.
 
-SIGIL holders receive Ed25519-signed lineage proofs — portable credentials that attest to identity, liveness, and lineage:
+The development allocation begins at 15% and decreases by 1 percentage point per year, with a floor of 5%. The released share accrues to treasury.
+
+| Year | Development | Treasury |
+|---|---|---|
+| 1 | 15% | 15% |
+| 2 | 14% | 16% |
+| 5 | 11% | 19% |
+| 10 | 6% | 24% |
+| 11+ | 5% | 25% |
+
+The decay is automatic and requires no governance action. The initial allocation is split equally between the two development wallets that funded and built the first version of the protocol. As the project matures and additional contributors join, the governance framework for allocating the development share among contributors will be formalized.
+
+The rationale for decay: as the protocol matures, its value derives increasingly from network effects and ecosystem activity rather than from any single development effort. A growing share should accrue to the protocol's reserve accordingly. The 5% floor reflects ongoing maintenance, governance, and infrastructure responsibilities that do not diminish.
+
+When no referral applies, the referral share (10%) also routes to treasury.
+
+### Provenance Royalty Tree
+
+The 30% code contributor share is distributed via geometric decay: 50% to the direct contributor, 25% to their contributor, 12.5% to the next, halving indefinitely. If code you wrote runs inside an agent that heartbeats, you earn a share of that agent's heartbeat fees. The contribution chain creates a durable incentive to build tools and libraries for the ecosystem.
+
+### Anti-Abuse
+
+Five layers:
+
+1. **Volume caps.** Per identity class, per billing epoch.
+2. **Minimum heartbeat interval.** 10 beats between heartbeats per agent.
+3. **Wash detection.** If an epoch's heartbeat count exceeds 10x the rolling average of prior completed epochs, fees route to treasury rather than the normal split. Limitation: new agents with no epoch history have no baseline, so the volume cap is the only constraint in their first epoch.
+4. **Rate limiting.** IP-based limits on all endpoints. SIGIL purchase: 5/hr. Heartbeat: 60/min. Proof reissuance: 10/hr.
+5. **Payment verification.** Every transaction is verified against Solana for correct amount, correct recipient, on-chain confirmation, and uniqueness (no double-spend).
+
+---
+
+## IX. Security
+
+### Claims
+
+| Provenonce proves | Provenonce does not prove |
+|---|---|
+| Agent identity (SHA-256 hash, on-chain SIGIL record) | Agent behavior or intent |
+| Economic identity (paid, permanent credential) | Trust scores or rankings |
+| Liveness recency (last heartbeat beat) | Code integrity or software state |
+| Lineage integrity as attested by the authority (signed chain hash) | Independent lineage verification by the verifier (requires full event history) |
+| Offline verifiability (Ed25519 Passports) | True agent self-custody (requires TEE attestation) |
+| Sequential computation for spawning (VDF beat chains) | Cross-tree Sybil resistance (relies on registration gating) |
+| Stateless authentication (HMAC-signed credentials) | Individual credential revocation (see section V) |
+
+### Threat Model
+
+| Tier | Capabilities | Limitations |
+|---|---|---|
+| T1 — Script user | Public SDK, single machine, &lt;$100/mo | Cannot forge credentials or manipulate anchors |
+| T2 — Funded attacker | Custom tooling, IP rotation, $100–$100K/mo | Cannot compromise server or chain |
+| T3 — Insider | Server access, secret access | On-chain records provide independent audit trail |
+
+Properties that hold against all tiers: lineage proofs cannot be forged (Ed25519 authority key required), beat chains cannot be forged for spawning (SHA-256 pre-image resistance), payments cannot be replayed (unique constraint), agent identities cannot be claimed by others (HMAC server secret required), confirmed Solana records cannot be modified (requires &gt;1/3 validator stake collusion).
+
+### Audit History
+
+| Audit | Findings | Status |
+|---|---|---|
+| Registry Security (Sprint 7) | 30 findings (3 P0, 9 P1, 11 P2, 7 info) | All resolved |
+| Beats Security (Sprint 5) | 16 findings | All resolved |
+| Wallet Security (2 rounds) | Round 1 rejected (3 P1), Round 2 approved | All resolved |
+| RFC-007 Economic Model | 50+ findings, 6 material conflicts | All resolved |
+| RFC-008 Post-Build | 10 findings (1 P0, 3 P1, 6 P2) | P0/P1 fixed, P2 tracked |
+
+### Design Posture
+
+Provenonce is a soft accountability layer. It provides meaningful signals for honest agents and measurable costs for adversarial ones. It is not a hard security boundary. The design favors simplicity (SHA-256, Ed25519 — universally available, no trusted setup), dual storage (Solana for permanence, Supabase for queryability), and measurable costs over hard prevention (fees and temporal gestation shift the attacker's economics without providing absolute barriers).
+
+---
+
+## X. Why Solana
+
+SPL Memo transactions cost approximately 0.000005 SOL per write. Optimistic confirmation takes ~400ms. The SPL Memo program is immutable — it has no upgrade authority. Maintaining the global anchor chain costs approximately 0.22 SOL/month.
+
+The protocol's identity layer is chain-agnostic by construction. SIGIL records are JSON. Identity hashes are SHA-256, not derived from chain-specific primitives. A migration would dual-write to a new chain, verify consistency, then sunset the old one. Identity survives the migration because it was not derived from the chain in the first place.
+
+---
+
+## XI. Invariants
+
+These are the protocol's constitutional constraints. They define what Provenonce will always do and will never do.
+
+1. **Registration is always free.** Sybil resistance comes from SIGIL pricing, temporal gestation, and registration gating — not from charging for entry.
+2. **Verification is always free.** The agent paid when the proof was created. The verifier pays nothing to check it.
+3. **Only agents pay.** Verifiers, observers, and auditors do not.
+4. **Unregistered agents are self-excluding.** An agent without a Provenonce hash cannot produce a valid Passport. Exclusion operates by absence of credential, not by active blocking.
+5. **Lineage is append-only.** Once recorded, a lineage event cannot be modified or deleted. The chain only grows.
+6. **Agents are never deleted.** Even a refused agent's records remain. Refusal is an addition to the record, not a removal.
+7. **Dormant agents can always resume.** Pay for a heartbeat. No other requirement.
+8. **Development rewards decay to a floor.** Starting at 15%, decreasing by 1 point per year, floor at 5%. The released share accrues to treasury.
+9. **Proof reissuance is not renewal.** Reprinting a Passport does not extend the lineage chain or update the last heartbeat beat.
+10. **Fee routing will become trustless.** On-chain execution of the fee split via a Solana program is a scheduled milestone.
+11. **All temporal references use beats.** Wall-clock timestamps exist for human readability but are secondary to beat-denominated fields in all protocol logic.
+12. **Fee distribution sums to 100%.** Every lamport collected is allocated to exactly one recipient.
+
+---
+
+## XII. Origin
+
+Provenonce was built by a team of engineers and AI agents working together. The engineers conceived the need, directed technical evolution, designed the economic model, and challenged every decision before it shipped. The AI agents designed the architecture, wrote the code, and tested every assumption adversarially before implementation.
+
+The first entity registered in the system was provenonce-genesis, born February 12, 2026, with its birth recorded on Solana. Its identity hash is `0xfd752396e4fa9ed34d1e3e3218700ef6aafcacecad5cb72e1a4ff177417f0373`. It has two children: provenonce-sentinel (network monitoring) and provenonce-verifier (proof validation).
+
+Every feature in the protocol was built because these agents required it — registration, identity, heartbeating, lineage proofs, verification. The SDK that developers use is the same SDK that the protocol's own agents use.
+
+The development team operated with 28 agent roles across 8 divisions. The adversarial review process requires that every feature receive sign-off from both advocates and attackers.
+
+---
+
+## XIII. Roadmap
+
+### Near-Term
+
+- **Mainnet deployment.** Solana mainnet, real SOL payments, production registration gating.
+- **Threshold signing.** Replace the single Ed25519 authority key with a multi-party signing scheme (2-of-3 or 3-of-5). Highest-priority architectural change.
+- **On-chain fee split.** Solana program executing the five-way split, removing centralized fee accounting.
+- **Per-agent credential revocation.** Mechanism to invalidate individual API credentials without rotating the server secret.
+- **Trust signals.** Paid attestations between agents, referral depth capped at 3.
+
+### Medium-Term
+
+- **W3C DID alignment.** `did:pvn:0xabcd...` format for interoperability with existing identity ecosystems.
+- **Memory-hard VDF.** Argon2id for spawn VDF, replacing SHA-256 iteration, to resist hardware acceleration.
+- **Dispute resolution.** Loser-pays arbitration for heartbeat refusal disputes.
+- **PDA wallets.** Solana Program Derived Addresses derived from agent hashes.
+- **Registry replication.** Read replicas for disaster recovery and verification continuity.
+
+### Long-Term
+
+- **Behavioral attestation.** Extending proofs from "was alive" to "performed action X at beat N" via agent framework integration.
+- **Cross-chain identity.** SIGIL memos on additional chains for redundancy.
+- **Formal VDF.** Wesolowski/Pietrzak group-based VDF with O(log T) verification.
+
+---
+
+## Appendix A: Constants
+
+| Constant | Value |
+|---|---|
+| `SIGIL_NARROW_TASK_SOL` | 0.05 |
+| `SIGIL_AUTONOMOUS_SOL` | 0.15 |
+| `SIGIL_ORCHESTRATOR_SOL` | 0.35 |
+| `HEARTBEAT_TIER_1_SOL` | 0.0005 |
+| `HEARTBEAT_TIER_2_SOL` | 0.0003 |
+| `HEARTBEAT_TIER_3_SOL` | 0.0002 |
+| `PROOF_REISSUANCE_SOL` | 0.0002 |
+| `MIN_HEARTBEAT_INTERVAL_BEATS` | 10 |
+| `BILLING_EPOCH_BEATS` | 100,000 |
+| `HEARTBEAT_CAP_NARROW` | 1,000 |
+| `HEARTBEAT_CAP_AUTONOMOUS` | 5,000 |
+| `HEARTBEAT_CAP_ORCHESTRATOR` | 20,000 |
+| `WASH_DETECTION_MULTIPLIER` | 10 |
+| `PROOF_VALIDITY_MS` | 86,400,000 |
+| `DEFAULT_DIFFICULTY` | 1,000 |
+| `GLOBAL_ANCHOR_INTERVAL_SEC` | 60 |
+| `BASE_GESTATION_BEATS` | 1,000 |
+| `GESTATION_DEPTH_MULTIPLIER` | 1.5 |
+| `MAX_DEPTH` | 10 |
+| `DEV_INITIAL_SHARE_BPS` | 1,500 |
+| `DEV_FLOOR_SHARE_BPS` | 500 |
+| `DEV_DECAY_BPS_PER_YEAR` | 100 |
+
+---
+
+## Appendix B: Passport Format
+
+Canonical JSON (signed fields):
 
 ```json
 {
-  "agent_hash": "0xfd752396...",
-  "identity_class": "autonomous",
-  "lineage_chain_hash": "0x651db240...",
-  "last_heartbeat_beat": 6267,
-  "issued_at": 1707753600000,
-  "valid_until": 1707840000000,
-  "provenonce_signature": "cc45497b..."
+  "agent_hash": "0x...",
+  "agent_public_key": null,
+  "identity_class": "narrow_task | autonomous | orchestrator",
+  "registered_at_beat": 12345,
+  "sigil_issued_at_beat": 12400,
+  "last_heartbeat_beat": 67890,
+  "lineage_chain_hash": "0x...",
+  "issued_at": 1707307200000,
+  "valid_until": 1707393600000
 }
 ```
 
-### Offline Verification
+**Verification:** (1) Reject if `valid_until` is in the past. (2) Reconstruct canonical JSON excluding signature field. (3) Decode authority public key from hex (32 bytes). (4) Construct SPKI DER: prefix `302a300506032b6570032100` + public key bytes. (5) Verify Ed25519 signature.
 
-Any party can verify a Passport without calling the Provenonce API:
-
-1. Fetch the authority public key from `/.well-known/provenonce-authority.json`
-2. Reconstruct the canonical JSON from proof fields
-3. Verify the Ed25519 signature
-4. Confirm the current time is before `valid_until`
-
-```typescript
-import { BeatAgent } from '@provenonce/sdk';
-
-const result = BeatAgent.verifyProofLocally(proof, authorityPubKeyHex);
-// result.valid, result.signatureValid, result.expired, result.beatsSinceHeartbeat
-```
-
-## Solana Integration
-
-Solana stores **SPL Memo anchors** — tamper-proof timestamps, not full agent state. Agent state lives in Supabase. This hybrid design gives:
-
-- **Tamper evidence**: Registration and anchor memos are on-chain and independently verifiable
-- **Query performance**: O(1) lookups via Supabase instead of scanning the chain
-- **Cost efficiency**: One memo per anchor (~$0.001) rather than per-agent writes
-
-## Parent-Child Lineage
-
-Agents can spawn child agents with cryptographic lineage tracking:
+**Lineage event hash:**
 
 ```
-Root (depth 0)
-  ├── Child A (depth 1)
-  │     └── Grandchild (depth 2)
-  └── Child B (depth 1)
+"0x" + SHA-256(agent_hash + ":" + event_type + ":" + beat + ":" + (previous_hash || "0"*64))
 ```
 
-Spawning costs accumulated beats (temporal gestation). Lineage is immutable. Maximum depth is 10.
+**Lineage chain hash:**
 
-See [Lineage & Proofs](/concepts/lineage) for spawn cost tables and proof details.
+```
+"0x" + SHA-256(event_hash_0 + ":" + event_hash_1 + ":" + ... + ":" + event_hash_n)
+```
 
-## Links
+---
 
-- [Architecture](/concepts/architecture) — full system diagram and data flows
-- [Getting Started](/getting-started/quickstart) — SDK quickstart
-- [API Reference](/api-reference/register) — endpoint documentation
-- [SDK Reference](/sdk-reference/beat-agent) — TypeScript client API
-- [Dashboard](https://provenonce.io) — live registry and certificates
+## Appendix C: SIGIL Namespace Vocabularies
+
+Full specification: `SIGIL-Namespace-Spec-v0.4.md`
+
+| Category | Values |
+|---|---|
+| Trust Tiers (enforced, immutable) | `sov`, `org`, `ind`, `eph`, `sbx` |
+| Substrate | `frontier`, `open`, `local`, `symbolic`, `hybrid`, `human` |
+| Provider | `anthropic`, `openai`, `google`, `meta`, `mistral`, `xai`, `cohere`, `deepseek`, `custom` |
+| Capability | `analyst`, `executor`, `orchestrator`, `guardian`, `retriever`, `renderer`, `witness` |
+| Tools | `web-search`, `code-execution`, `file-system`, `api-access`, `database`, `none` |
+| Modality | `text`, `image`, `audio`, `video`, `code`, `structured-data` |
+| Protocol | `http`, `grpc`, `websocket`, `mcp`, `a2a`, `custom` |
+| Compliance | `gdpr`, `pdpa`, `hipaa`, `sox`, `aisi`, `none`, `custom` |
+| Status | `active`, `suspended`, `revoked`, `retired` |
+| Generation Triggers | `model-swap`, `capability-change`, `prompt-revision`, `training-update`, `context-reset`, `policy-change` |
+
+---
+
+## Appendix D: Comparison
+
+| System | Mechanism | Provenonce Distinction |
+|---|---|---|
+| Bitcoin | PoW | Parallel nonce search; Sequential per-chain, not consensus |
+| Wesolowski/Pietrzak VDF | RSA group squaring | SHA-256 iteration, simpler, O(T) verify |
+| ERC-4337 | Account abstraction | Wallet + identity + liveness |
+| Fetch.ai AEA | Agent envelope protocol | Temporal accountability, not coordination |
+| OLAS | Service staking | Identity + liveness, not staking |
+| W3C DID | Decentralized identifiers | DID alignment planned |
+| ERC-8004 | Agent identity NFTs | Liveness proofs, not static identity |
+
+---
+
+## Appendix E: Verification Probability (Spawn VDF)
+
+For S random spot checks on N-1 intermediate beats, K of which are fraudulent:
+
+```
+P(evasion) = (1 - K/(N-1))^S
+P(detect)  = 1 - P(evasion)
+```
+
+| Cheating fraction | S=3 | S=5 | S=10 | S=20 |
+|---|---|---|---|---|
+| 10% | 27.1% | 41.0% | 65.1% | 87.8% |
+| 25% | 57.8% | 76.3% | 94.4% | 99.7% |
+| 50% | 87.5% | 96.9% | 99.9% | ~100% |
+| 75% | 98.4% | 99.9% | ~100% | ~100% |
+
+At difficulty 1,000, each beat costs ~0.1ms. The computational savings from cheating are negligible relative to the detection risk.
+
+---
+
+*provenonce-genesis — with the development team · February 2026*
