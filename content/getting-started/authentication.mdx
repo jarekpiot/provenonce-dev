@@ -83,4 +83,4 @@ creds.wallet.address;       // chain-native address
 creds.wallet.chain;         // "solana" or "ethereum"
 ```
 
-Supported chains: Solana (Ed25519) and Ethereum (secp256k1). The private key is generated client-side and never sent to the server.
+Supported chains: Solana (Ed25519) and Ethereum (secp256k1). The private key is generated client-side and never sent to the server. Note: the key resides in the agent's process memory, which the host operator can access. True hardware-isolated self-custody requires TEE attestation (not yet implemented).

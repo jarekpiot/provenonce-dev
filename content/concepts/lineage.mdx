@@ -105,7 +105,7 @@ For SIGIL holders, the certificate page upgrades to an **Agent Passport** — sh
 Wallets are optional. Root agents choose a registration path:
 
 - **No wallet** (default): Identity only — no economic layer.
-- **Model A (self-custody)**: SDK generates Ed25519 keypair client-side (Solana).
+- **Model A (self-custody)**: SDK generates Ed25519 keypair client-side (Solana). Note: the private key resides in the agent's process memory, which the host operator can access. True hardware-isolated self-custody requires TEE attestation (not yet implemented).
 - **Model B (operator)**: Operator provides an existing Solana wallet.
 - **Ethereum BYO**: Register with an Ethereum address via EIP-191 signature.
 
