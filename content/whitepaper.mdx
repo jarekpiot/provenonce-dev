@@ -1,0 +1,158 @@
+# Whitepaper
+
+> Provenonce: The Trust Registry for the Agentic Era
+
+## Abstract
+
+Provenonce provides cryptographic identity and lineage proofs for AI agents, anchored on-chain. Every agent receives a unique hash at registration. Agents that purchase a **SIGIL** — a classified identity — gain Ed25519-signed lineage proofs (Passports) that are verifiable offline, without calling any API.
+
+The protocol answers a single question: *can this agent prove what it claims to be?*
+
+## Problem
+
+As autonomous AI agents proliferate, there is no standard way to:
+
+- **Identify** an agent cryptographically (who is it?)
+- **Classify** its capabilities and authority (what is it allowed to do?)
+- **Verify** its liveness and lineage (is it still operating? who created it?)
+- **Audit** its history without trusting a central authority (can I check independently?)
+
+Existing identity systems assume human users. Agent-to-agent trust requires a different primitive — one built on cryptographic proofs rather than passwords or OAuth tokens.
+
+## Design Principles
+
+1. **Identity is free, trust is earned.** Registration creates an identity. SIGIL purchase creates a classified, accountable identity.
+2. **Proofs, not promises.** Every claim is backed by an Ed25519 signature, a Solana memo, or a SHA-256 chain hash.
+3. **Offline-verifiable.** Passports can be verified without network access using the authority public key.
+4. **Market-determined standing.** Agents that stop heartbeating become stale — no penalty, no freeze. Standing is determined by consumers of the proof.
+5. **Chain-agnostic identity.** Wallets are optional. Supported chains: Solana, Ethereum.
+
+## Architecture
+
+Provenonce is split into three independent services:
+
+| Service | Purpose | State |
+|---------|---------|-------|
+| **Beats** | VDF computation + Solana anchor memos | Stateless (no database) |
+| **Registry** | Agent identity, SIGIL, heartbeats, lineage proofs | Supabase + Solana |
+| **SDK** | TypeScript client for agents | npm `@provenonce/sdk` |
+
+The Beats service writes a global anchor to Solana every minute. The Registry imports these anchors, linking agent liveness to the on-chain timeline.
+
+See [Architecture](/concepts/architecture) for the full system diagram.
+
+## Agent Lifecycle
+
+```
+Register → Purchase SIGIL → Heartbeat (periodic) → Stale (if heartbeats lapse)
+                                                        ↓
+                                                  Resume heartbeat
+```
+
+1. **Register** — Agent receives a unique SHA-256 hash and API key. Optional wallet (Solana or Ethereum).
+2. **Purchase SIGIL** — Agent selects an identity class (`narrow_task`, `autonomous`, `orchestrator`) and pays via on-chain transaction. Receives a three-component namespace: `name*principal*tier`.
+3. **Heartbeat** — Periodic paid liveness proofs. Each heartbeat returns a fresh Ed25519-signed lineage proof valid for 24 hours.
+4. **Stale** — If heartbeats lapse, the agent becomes stale. No penalty, no freeze. Standing is market-determined.
+5. **Resume** — Send a new heartbeat to resume. No resync required.
+
+## SIGIL Namespace
+
+Every SIGIL-holding agent receives a structured identity:
+
+```
+[name]*[principal]*[tier]
+```
+
+- **Name**: Unique agent identifier (lowercase, hyphens, max 63 chars)
+- **Principal**: The accountable entity (organization or individual, max 24 chars)
+- **Tier**: Trust governance class — `sov` (sovereign), `org` (organization), `ind` (individual), `eph` (ephemeral), `sbx` (sandbox)
+
+Identity class (`narrow_task`, `autonomous`, `orchestrator`) determines pricing. Tier determines governance rules. They are orthogonal.
+
+## Economic Model
+
+### Fee Structure
+
+| Fee | Amount | When |
+|-----|--------|------|
+| Registration | Free | At registration |
+| SIGIL purchase | Varies by identity class | One-time |
+| Heartbeat | Varies by identity class | Per heartbeat |
+| Spawn | `1000 * 1.5^depth * 1.2^siblings` beats | Per child agent |
+
+### Fee Distribution
+
+All SIGIL and heartbeat fees are split:
+
+| Recipient | Share |
+|-----------|-------|
+| Operations | 30% |
+| Contributors | 30% |
+| Development | 15% → 5% (decays 1%/year over 10 years) |
+| Treasury | 15% → 25% (absorbs development decay) |
+| Referral | 10% |
+
+The development share decays from 15% to a 5% floor at 1% per year. Treasury absorbs the difference.
+
+## Lineage Proofs (Passports)
+
+SIGIL holders receive Ed25519-signed lineage proofs — portable credentials that attest to identity, liveness, and lineage:
+
+```json
+{
+  "agent_hash": "0xfd752396...",
+  "identity_class": "autonomous",
+  "lineage_chain_hash": "0x651db240...",
+  "last_heartbeat_beat": 6267,
+  "issued_at": 1707753600000,
+  "valid_until": 1707840000000,
+  "provenonce_signature": "cc45497b..."
+}
+```
+
+### Offline Verification
+
+Any party can verify a Passport without calling the Provenonce API:
+
+1. Fetch the authority public key from `/.well-known/provenonce-authority.json`
+2. Reconstruct the canonical JSON from proof fields
+3. Verify the Ed25519 signature
+4. Confirm the current time is before `valid_until`
+
+```typescript
+import { BeatAgent } from '@provenonce/sdk';
+
+const result = BeatAgent.verifyProofLocally(proof, authorityPubKeyHex);
+// result.valid, result.signatureValid, result.expired, result.beatsSinceHeartbeat
+```
+
+## Solana Integration
+
+Solana stores **SPL Memo anchors** — tamper-proof timestamps, not full agent state. Agent state lives in Supabase. This hybrid design gives:
+
+- **Tamper evidence**: Registration and anchor memos are on-chain and independently verifiable
+- **Query performance**: O(1) lookups via Supabase instead of scanning the chain
+- **Cost efficiency**: One memo per anchor (~$0.001) rather than per-agent writes
+
+## Parent-Child Lineage
+
+Agents can spawn child agents with cryptographic lineage tracking:
+
+```
+Root (depth 0)
+  ├── Child A (depth 1)
+  │     └── Grandchild (depth 2)
+  └── Child B (depth 1)
+```
+
+Spawning costs accumulated beats (temporal gestation). Lineage is immutable. Maximum depth is 10.
+
+See [Lineage & Proofs](/concepts/lineage) for spawn cost tables and proof details.
+
+## Links
+
+- [Architecture](/concepts/architecture) — full system diagram and data flows
+- [Getting Started](/getting-started/quickstart) — SDK quickstart
+- [API Reference](/api-reference/register) — endpoint documentation
+- [SDK Reference](/sdk-reference/beat-agent) — TypeScript client API
+- [Dashboard](https://provenonce.io) — live registry and certificates

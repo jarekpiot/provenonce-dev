@@ -1,5 +1,6 @@
 export default {
   index: 'Introduction',
+  whitepaper: 'Whitepaper',
   'getting-started': 'Getting Started',
   concepts: 'Concepts',
   'api-reference': 'API Reference',
