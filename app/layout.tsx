@@ -9,10 +9,10 @@ export const metadata = {
     default: 'Provenonce Developer Docs',
     template: '%s — Provenonce Docs',
   },
-  description: 'Cryptographic identity and accountability for AI agents. SDK docs, API reference, tutorials.',
+  description: 'The trust registry for the agentic era. SDK docs, API reference, tutorials.',
   openGraph: {
     title: 'Provenonce Developer Docs',
-    description: 'Cryptographic identity and accountability for AI agents',
+    description: 'The trust registry for the agentic era',
     siteName: 'provenonce.dev',
   },
 }
@@ -40,7 +40,7 @@ const footer = (
     <a href="https://provenonce.io" target="_blank" rel="noopener noreferrer">
       Provenonce
     </a>
-    . Cryptographic identity for AI agents.
+    . The trust registry for the agentic era.
   </Footer>
 )
 
