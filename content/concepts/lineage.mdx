@@ -35,42 +35,49 @@ The inner `floor` rounds the base depth cost, then the outer `floor` rounds afte
 | 1 | 1,500 | 1,800 | 2,160 |
 | 2 | 2,250 | 2,700 | 3,240 |
 
-## Lineage proofs
+## Lineage proofs (Passports)
 
-The `/verify/:hash` endpoint returns an **Ed25519-signed lineage proof** — a cryptographic attestation of the agent's full parent chain signed by the Provenonce authority key.
+The `/verify/:hash` endpoint returns an **Ed25519-signed lineage proof** — a cryptographic attestation of the agent's identity, SIGIL status, and heartbeat history, signed by the Provenonce authority key.
+
+For SIGIL holders, this proof is their **Passport** — a portable, offline-verifiable credential that proves identity class, liveness, and lineage in a single signed document.
 
 ```json
 {
   "lineage_proof": {
-    "signature": "base64-encoded-ed25519-signature...",
-    "chain_hash": "sha256-of-lineage-chain...",
-    "valid_from": "2026-02-12T12:00:00.000Z",
-    "valid_until": "2026-02-13T12:00:00.000Z"
+    "agent_hash": "0xfd752396...",
+    "agent_public_key": "DAsDZb5p...",
+    "identity_class": "autonomous",
+    "registered_at_beat": 5600,
+    "sigil_issued_at_beat": 5610,
+    "last_heartbeat_beat": 6267,
+    "lineage_chain_hash": "0x651db240...",
+    "issued_at": 1707753600000,
+    "valid_until": 1707840000000,
+    "provenonce_signature": "cc45497b04b9..."
   }
 }
 ```
 
 ### Proof validity
 
-Lineage proofs are valid for **24 hours** from issuance. After expiry, request a fresh proof by calling `/verify/:hash` again. The server reissues proofs on each request with a new validity window.
+Lineage proofs are valid for **24 hours** from issuance. After expiry:
+- Call `heartbeat()` to get a fresh proof (extends lineage chain)
+- Call `reissueProof()` for a reprint without extending lineage
+- Call `/verify/:hash` to get a fresh proof (public, no auth)
 
 ### Offline verification
 
-Any party can verify a lineage proof without calling the Provenonce API:
+Any party can verify a Passport without calling the Provenonce API:
 
 1. Fetch the authority public key from `https://provenonce.io/.well-known/provenonce-authority.json`.
-2. Reconstruct the `chain_hash` by hashing the serialized lineage array.
-3. Verify the Ed25519 `signature` against the `chain_hash` using the authority key.
-4. Confirm the current time falls within `valid_from` and `valid_until`.
+2. Reconstruct the canonical JSON from the proof fields (deterministic key order).
+3. Verify the Ed25519 `provenonce_signature` against the canonical JSON using the authority key.
+4. Confirm the current time is before `valid_until`.
 
-The authority key document:
+```typescript
+import { BeatAgent } from '@provenonce/sdk';
 
-```json
-{
-  "authority_key": "base64-encoded-ed25519-public-key",
-  "algorithm": "Ed25519",
-  "key_id": "provenonce-authority-v1"
-}
+const valid = BeatAgent.verifyProofLocally(proof, authorityPubKeyHex);
 ```
 
 This enables trust decisions without network access — useful for air-gapped systems, edge deployments, and third-party integrators who cache proofs.
@@ -83,13 +90,15 @@ The verify endpoint returns the full lineage chain:
 curl https://provenonce.io/api/v1/verify/0xCHILD_HASH
 ```
 
-## Birth certificates
+## Certificates and Passports
 
-Every agent has a visual birth certificate at:
+Every agent has a visual **Certificate of Registration** at:
 
 ```
 https://provenonce.io/certificate/AGENT_HASH
 ```
+
+For SIGIL holders, the certificate page upgrades to an **Agent Passport** — showing identity class, SIGIL details, and the latest lineage proof.
 
 ## Wallets
 

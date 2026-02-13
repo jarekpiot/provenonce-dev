@@ -25,7 +25,7 @@ curl https://provenonce.io/api/v1/verify/0xfd752396e4fa9ed34d1e3e3218700ef6aafca
     "registered": "2026-02-12T..."
   },
   "sigil": {
-    "identity_class": "sovereign",
+    "identity_class": "autonomous",
     "issued_at": "2026-02-12T...",
     "tx_signature": "BmcxxSCk..."
   },
@@ -94,24 +94,30 @@ Present for agents that hold a SIGIL identity tier. `null` if the agent has no S
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `identity_class` | string | `"basic"`, `"verified"`, or `"sovereign"` |
+| `identity_class` | string | `"narrow_task"`, `"autonomous"`, or `"orchestrator"` |
 | `issued_at` | string | ISO timestamp of SIGIL issuance |
 | `tx_signature` | string | Solana transaction signature for the SIGIL purchase |
 
-## Lineage proof
+## Lineage proof (Passport)
 
-The `lineage_proof` section contains a cryptographic proof of the agent's lineage chain, signed by the Provenonce authority key. Proofs are **Ed25519-signed** and valid for **24 hours**.
+The `lineage_proof` section contains a cryptographic proof of the agent's lineage chain, signed by the Provenonce authority key. For SIGIL holders, this proof serves as their **Passport** — a portable, offline-verifiable credential. Proofs are **Ed25519-signed** and valid for **24 hours**.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `signature` | string | Base64-encoded Ed25519 signature over the chain hash |
-| `chain_hash` | string | SHA-256 hash of the serialized lineage chain |
-| `valid_from` | string | ISO timestamp — proof validity start |
-| `valid_until` | string | ISO timestamp — proof expiry (24h after issuance) |
+| `agent_hash` | string | Agent identity hash |
+| `agent_public_key` | string \| null | Wallet address (key-binding for impersonation prevention) |
+| `identity_class` | string | SIGIL tier (`narrow_task`, `autonomous`, `orchestrator`) |
+| `registered_at_beat` | number | Beat index at registration |
+| `sigil_issued_at_beat` | number \| null | Beat index at SIGIL issuance |
+| `last_heartbeat_beat` | number | Beat index of most recent heartbeat |
+| `lineage_chain_hash` | string | SHA-256 hash of the agent's lineage event chain |
+| `issued_at` | number | Unix timestamp (ms) — proof issuance |
+| `valid_until` | number | Unix timestamp (ms) — proof expiry (24h after issuance) |
+| `provenonce_signature` | string | Hex-encoded Ed25519 signature over canonical proof data |
 
 ### Offline verification
 
-You can verify lineage proofs offline using the Provenonce authority public key, available at:
+You can verify lineage proofs (Passports) offline using the Provenonce authority public key, available at:
 
 ```
 https://provenonce.io/.well-known/provenonce-authority.json
@@ -119,19 +125,19 @@ https://provenonce.io/.well-known/provenonce-authority.json
 
 ```json
 {
-  "authority_key": "base64-encoded-ed25519-public-key",
-  "algorithm": "Ed25519",
-  "key_id": "provenonce-authority-v1"
+  "authority_public_key": "hex-encoded-32-byte-ed25519-public-key",
+  "algorithm": "ed25519",
+  "key_format": "raw_hex_32_bytes"
 }
 ```
 
 To verify:
 1. Fetch the authority key from `/.well-known/provenonce-authority.json` (cache it).
-2. Reconstruct the `chain_hash` from the `lineage` array.
-3. Verify the `signature` against the `chain_hash` using the authority public key.
-4. Check that the current time is between `valid_from` and `valid_until`.
+2. Reconstruct the canonical JSON from the proof fields (deterministic key order).
+3. Verify the `provenonce_signature` against the canonical JSON using the authority public key.
+4. Check that the current time is before `valid_until`.
 
-This allows any party to verify an agent's lineage without calling the Provenonce API.
+This allows any party to verify an agent's Passport without calling the Provenonce API.
 
 For child agents, `lineage` walks from the agent up to the root.
 

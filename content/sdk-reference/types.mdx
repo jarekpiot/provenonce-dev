@@ -4,17 +4,29 @@ All types exported from `@provenonce/sdk`.
 
 ## LineageProof
 
-Ed25519-signed proof of an agent's lineage and liveness. Valid for 24 hours from `valid_from`. Can be verified offline with `Provenonce.verifyProofLocally()`.
+Ed25519-signed proof of an agent's lineage and liveness. Valid for 24 hours from `issued_at`. Can be verified offline with `BeatAgent.verifyProofLocally()`.
 
 ```typescript
 interface LineageProof {
   agent_hash: string;
-  beat: number;
-  chain_hash: string;
-  signature: string;
-  valid_from: string;    // ISO 8601 timestamp
-  valid_until: string;   // ISO 8601 timestamp (valid_from + 24h)
+  agent_public_key: string | null;  // Wallet address (key-binding)
+  identity_class: IdentityClass;
+  registered_at_beat: number;
+  sigil_issued_at_beat: number | null;
+  last_heartbeat_beat: number;
+  lineage_chain_hash: string;
+  issued_at: number;       // Unix timestamp (ms)
+  valid_until: number;     // Unix timestamp (ms), issued_at + 24h
+  provenonce_signature: string;  // Hex-encoded Ed25519 signature
 }
+```
+
+## Passport
+
+Type alias for `LineageProof`. A Passport is a SIGIL holder's lineage proof — a portable, offline-verifiable credential.
+
+```typescript
+type Passport = LineageProof;
 ```
 
 ## SigilResult

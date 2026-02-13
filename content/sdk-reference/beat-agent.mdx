@@ -93,11 +93,15 @@ const proof = await agent.reissueProof();
 const proof = await agent.reissueProof('tx_hash...');
 ```
 
-### `getLatestProof()` -- Get cached proof (no network)
+### `getPassport()` / `getLatestProof()` -- Get cached proof (no network)
 
-Returns the most recent lineage proof from memory.
+Returns the most recent lineage proof (Passport) from memory.
 
 ```typescript
+const passport = agent.getPassport();
+// Passport | null (alias for LineageProof)
+
+// Or the original method name:
 const proof = agent.getLatestProof();
 // LineageProof | null
 ```

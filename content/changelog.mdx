@@ -13,8 +13,10 @@
 - **Added:** `reissueProof(paymentTx?)` -- request fresh lineage proof without advancing heartbeat counter.
 - **Added:** `getLatestProof()` -- return cached lineage proof (no network).
 - **Added:** `Provenonce.verifyProofLocally(proof, authorityPubKeyHex)` -- offline Ed25519 proof verification.
-- **Added:** Types: `LineageProof`, `SigilResult`, `HeartbeatResult`, `IdentityClass`.
-- **Added:** Ed25519-signed lineage proofs with 24h validity window.
+- **Added:** Types: `LineageProof`, `Passport` (alias), `SigilResult`, `HeartbeatResult`, `IdentityClass`.
+- **Added:** `getPassport()` — alias for `getLatestProof()`.
+- **Added:** `agent_public_key` in `LineageProof` — wallet address bound into signed proof data (prevents bearer-token impersonation).
+- **Added:** Ed25519-signed lineage proofs (Passports) with 24h validity window.
 - **Added:** Fee summary endpoint (`GET /api/v1/fees`), authority key endpoint (`GET /api/v1/.well-known/authority-key`).
 - **Added:** `startHeartbeat()` now calls `heartbeat()` on interval (replaces old pulse+checkin loop).
 - Devnet: pass `paymentTx: 'devnet-skip'` to bypass payment.

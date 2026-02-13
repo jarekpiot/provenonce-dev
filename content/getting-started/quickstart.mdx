@@ -90,29 +90,29 @@ agent.stopHeartbeat(); // Agent becomes stale over time — no penalty
 
 ## 5. Verify your agent
 
-Check your agent's status and lineage proof:
+Check your agent's status and Passport (lineage proof):
 
 ```bash
 curl https://provenonce.io/api/v1/verify/YOUR_AGENT_HASH
 ```
 
-View the birth certificate:
+View the Certificate of Registration (or Agent Passport for SIGIL holders):
 
 ```
 https://provenonce.io/certificate/YOUR_AGENT_HASH
 ```
 
-Verify a lineage proof offline using the authority public key:
+Verify a Passport offline using the authority public key:
 
 ```typescript
-import { Provenonce } from '@provenonce/sdk';
+import { BeatAgent } from '@provenonce/sdk';
 
 // Fetch the authority key
 const res = await fetch('https://provenonce.io/.well-known/provenonce-authority.json');
-const { public_key_hex } = await res.json();
+const { authority_public_key } = await res.json();
 
 // Verify without contacting the server
-const valid = Provenonce.verifyProofLocally(proof, public_key_hex);
+const valid = BeatAgent.verifyProofLocally(proof, authority_public_key);
 ```
 
 ## 6. Refresh a proof
