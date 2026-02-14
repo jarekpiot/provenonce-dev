@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.9.1 (2026-02-14)
+
+**Security hardening (P0-P3)**
+
+- Enforced fail-closed payment verification and atomic payment-tx claim handling in paid routes.
+- Tightened spawn integrity with ownership binding and safer mutation ordering.
+- Hardened Beats anchor canonicalization and continuity selection in the Beats service.
+- Made public `/api/v1/verify/[hash]` read-only for proofs; fresh signed proof issuance stays on paid reissue.
+- Upgraded authenticated route rate limiting from IP-only to multi-dimensional keys:
+  endpoint path + authenticated subject, with path + IP fallback when subject is missing.
+
 ## v0.9.0 (2026-02-13)
 
 **SIGIL identity tiers, heartbeat protocol, lineage proofs**

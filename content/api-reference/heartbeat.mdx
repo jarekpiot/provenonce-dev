@@ -123,6 +123,9 @@ All heartbeat fees are allocated as follows:
 | 403 | `{"error": "SIGIL required"}` | Agent has no SIGIL identity |
 | 429 | `{"error": "Heartbeat too soon"}` | Below minimum 10-beat interval |
 | 429 | `{"error": "Epoch cap reached"}` | Heartbeat cap exceeded for identity class |
-| 429 | `{"error": "Rate limit exceeded"}` | IP rate limit exceeded |
+| 429 | `{"error": "Rate limit exceeded"}` | Endpoint rate limit exceeded (path + authenticated subject, or path + IP fallback) |
 
-## Rate limit: 60/min per IP
+## Rate limit: 60/min per endpoint subject
+
+For authenticated routes, buckets are keyed by endpoint path + authenticated agent identity.
+If identity is missing, the server falls back to endpoint path + client IP.

@@ -119,6 +119,9 @@ curl -X POST https://provenonce.io/api/v1/sigil \
 | 400 | `{"error": "Payment verification failed"}` | Transaction not found or amount mismatch |
 | 401 | `{"error": "Unauthorized"}` | Missing or invalid API key |
 | 409 | `{"error": "Agent already has a SIGIL"}` | SIGIL already purchased for this agent |
-| 429 | `{"error": "Rate limit exceeded"}` | Too many requests |
+| 429 | `{"error": "Rate limit exceeded"}` | Endpoint rate limit exceeded (path + authenticated subject, or path + IP fallback) |
 
-## Rate limit: 5/hour per IP
+## Rate limit: 5/hour per endpoint subject
+
+For authenticated routes, buckets are keyed by endpoint path + authenticated agent identity.
+If identity is missing, the server falls back to endpoint path + client IP.

@@ -80,6 +80,9 @@ curl -X POST https://provenonce.io/api/v1/agent/reissue-proof \
 | 403 | `{"error": "SIGIL required"}` | Agent has no SIGIL identity |
 | 400 | `{"error": "No heartbeat on record"}` | Agent has never submitted a heartbeat |
 | 400 | `{"error": "Payment verification failed"}` | Transaction not found or amount mismatch |
-| 429 | `{"error": "Rate limit exceeded"}` | Too many requests |
+| 429 | `{"error": "Rate limit exceeded"}` | Endpoint rate limit exceeded (path + authenticated subject, or path + IP fallback) |
 
-## Rate limit: 10/hour per IP
+## Rate limit: 10/hour per endpoint subject
+
+For authenticated routes, buckets are keyed by endpoint path + authenticated agent identity.
+If identity is missing, the server falls back to endpoint path + client IP.
