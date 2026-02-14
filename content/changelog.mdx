@@ -10,6 +10,11 @@
 - Made public `/api/v1/verify/[hash]` read-only for proofs; fresh signed proof issuance stays on paid reissue.
 - Upgraded authenticated route rate limiting from IP-only to multi-dimensional keys:
   endpoint path + authenticated subject, with path + IP fallback when subject is missing.
+- Added fail-fast cost guards on paid routes so oversized/invalid payloads are rejected before auth/payment/DB work:
+  `/api/v1/agent/spawn`, `/api/v1/agent/heartbeat`, `/api/v1/agent/reissue-proof`, `/api/v1/sigil` (commit `ebcf57c`).
+- Added route-level fail-fast tests:
+  `tests/cost-guards-fastfail.test.ts`, `tests/heartbeat-cost-guards-fastfail.test.ts`,
+  `tests/reissue-proof-cost-guards-fastfail.test.ts`, `tests/sigil-cost-guards-fastfail.test.ts`.
 
 ## v0.9.0 (2026-02-13)
 
